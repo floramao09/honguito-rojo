@@ -1,0 +1,4810 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Honguito Rojo 🍄</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: #fce4ec;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    transition: background 2s ease;
+  }
+
+  #canvas-container {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+
+  canvas { display: block; }
+
+  /* ——— UI OVERLAY ——— */
+  #ui {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* Header */
+  #header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    pointer-events: all;
+  }
+
+  #logo {
+    font-size: 22px;
+    font-weight: 900;
+    color: #5c2d6e;
+    text-shadow: 0 2px 12px rgba(232,52,42,0.2);
+    letter-spacing: -0.5px;
+  }
+
+  #logo span { color: #E8342A; }
+
+  #snow-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.65);
+    backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(232,52,42,0.2);
+    border-radius: 999px;
+    padding: 8px 16px;
+    color: #5c2d6e;
+    font-weight: 700;
+    font-size: 15px;
+    box-shadow: 0 2px 12px rgba(232,52,42,0.12);
+  }
+
+  #snow-count .flake { font-size: 18px; }
+
+  /* Bottom nav */
+  #bottom-nav {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    pointer-events: all;
+  }
+
+  .nav-btn {
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(232,52,42,0.2);
+    border-radius: 999px;
+    padding: 10px 20px;
+    color: #5c2d6e;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 16px rgba(232,52,42,0.1);
+  }
+
+  .nav-btn:hover {
+    background: rgba(232,52,42,0.12);
+    border-color: rgba(232,52,42,0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(232,52,42,0.2);
+  }
+
+  .nav-btn.active {
+    background: rgba(232,52,42,0.18);
+    border-color: rgba(232,52,42,0.5);
+  }
+
+  /* Welcome screen */
+  #welcome-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(30,10,50,0.85) 0%, rgba(10,5,20,0.95) 100%);
+    backdrop-filter: blur(4px);
+    transition: opacity 0.8s ease;
+  }
+
+  #welcome-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .welcome-mushroom {
+    font-size: 80px;
+    animation: bounce 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(232,52,42,0.7));
+    margin-bottom: 16px;
+  }
+
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .welcome-title {
+    font-size: 42px;
+    font-weight: 900;
+    color: #fff5e6;
+    text-align: center;
+    line-height: 1.1;
+    margin-bottom: 8px;
+    text-shadow: 0 0 30px rgba(232,52,42,0.5);
+  }
+
+  .welcome-title span { color: #E8342A; }
+
+  .welcome-sub {
+    font-size: 18px;
+    color: rgba(255,245,230,0.7);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .welcome-quote {
+    font-size: 16px;
+    color: rgba(255,213,179,0.85);
+    font-style: italic;
+    text-align: center;
+    max-width: 340px;
+    line-height: 1.5;
+    margin-bottom: 36px;
+    border-left: 3px solid rgba(232,52,42,0.5);
+    padding-left: 14px;
+  }
+
+  .welcome-btn {
+    background: linear-gradient(135deg, #E8342A, #c41f16);
+    border: none;
+    border-radius: 999px;
+    padding: 16px 40px;
+    color: #fff5e6;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 8px 32px rgba(232,52,42,0.5);
+  }
+
+  .welcome-btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 12px 40px rgba(232,52,42,0.7);
+  }
+
+  /* Room modal */
+  #room-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(10,5,20,0.7);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+
+  #room-modal.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal-card {
+    background: linear-gradient(160deg, #fff5e6 0%, #ffe8d6 100%);
+    border-radius: 32px;
+    padding: 32px;
+    max-width: 440px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(232,52,42,0.2);
+    transform: translateY(20px);
+    transition: transform 0.4s ease;
+  }
+
+  #room-modal.open .modal-card {
+    transform: translateY(0);
+  }
+
+  .modal-room-icon {
+    font-size: 52px;
+    text-align: center;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+  }
+
+  .modal-room-name {
+    font-size: 22px;
+    font-weight: 900;
+    color: #3d1a0a;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .modal-virtue {
+    text-align: center;
+    font-size: 13px;
+    color: rgba(61,26,10,0.6);
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+
+  .modal-question-box {
+    background: linear-gradient(135deg, rgba(232,52,42,0.08), rgba(232,52,42,0.04));
+    border: 1px solid rgba(232,52,42,0.2);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .modal-question-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(61,26,10,0.5);
+    margin-bottom: 10px;
+  }
+
+  .modal-question-text {
+    font-size: 19px;
+    font-weight: 700;
+    color: #3d1a0a;
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  .modal-textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.7);
+    border: 1.5px solid rgba(232,52,42,0.2);
+    border-radius: 16px;
+    padding: 16px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    color: #3d1a0a;
+    resize: none;
+    min-height: 100px;
+    transition: border-color 0.2s;
+    outline: none;
+    margin-bottom: 16px;
+  }
+
+  .modal-textarea:focus {
+    border-color: rgba(232,52,42,0.5);
+    background: rgba(255,255,255,0.9);
+  }
+
+  .modal-textarea::placeholder { color: rgba(61,26,10,0.4); }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-primary {
+    flex: 1;
+    background: linear-gradient(135deg, #E8342A, #c41f16);
+    border: none;
+    border-radius: 999px;
+    padding: 13px;
+    color: #fff5e6;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(232,52,42,0.4);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(232,52,42,0.5);
+  }
+
+  .btn-secondary {
+    background: rgba(61,26,10,0.08);
+    border: 1.5px solid rgba(61,26,10,0.15);
+    border-radius: 999px;
+    padding: 13px 20px;
+    color: rgba(61,26,10,0.6);
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { background: rgba(61,26,10,0.12); }
+
+  .modal-reward {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(61,26,10,0.5);
+  }
+
+  /* Room progress bar */
+  .room-progress-wrap { margin-bottom: 16px; }
+
+  .room-progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(61,26,10,0.45);
+    margin-bottom: 5px;
+  }
+
+  .room-progress-bar {
+    height: 6px;
+    background: rgba(232,52,42,0.1);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .room-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #f9a8d4, #E8342A);
+    transition: width 0.6s ease;
+  }
+
+  /* Badge chips */
+  .modal-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+    margin-bottom: 8px;
+  }
+
+  .badge-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1.5px solid;
+    transition: all 0.2s;
+  }
+
+  .badge-chip.done {
+    background: linear-gradient(135deg, rgba(255,182,193,0.4), rgba(255,220,150,0.4));
+    border-color: rgba(232,52,42,0.4);
+    color: #c41f16;
+  }
+
+  .badge-chip.pending {
+    background: rgba(61,26,10,0.04);
+    border-color: rgba(61,26,10,0.12);
+    color: rgba(61,26,10,0.4);
+  }
+
+  .badge-chip-name { font-size: 11px; }
+
+  /* Next badge hint */
+  .next-badge-hint {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(92,45,110,0.6);
+    text-align: center;
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+
+  /* History */
+  .modal-history {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(61,26,10,0.08);
+  }
+
+  .modal-history-title {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: rgba(92,45,110,0.5);
+    margin-bottom: 10px;
+  }
+
+  .history-item {
+    background: rgba(232,52,42,0.04);
+    border: 1px solid rgba(232,52,42,0.1);
+    border-radius: 14px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
+  .history-date {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(61,26,10,0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+
+  .history-q {
+    font-size: 12px;
+    font-style: italic;
+    color: rgba(61,26,10,0.55);
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  .history-a {
+    font-size: 13px;
+    font-weight: 600;
+    color: #3d1a0a;
+    line-height: 1.5;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: rgba(61,26,10,0.1);
+    border: none;
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+    color: rgba(61,26,10,0.5);
+    display: flex; align-items:center; justify-content:center;
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover { background: rgba(232,52,42,0.15); color: #E8342A; }
+
+  /* Honguito special room */
+  .honguito-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .honguito-opt-btn {
+    background: rgba(232,52,42,0.07);
+    border: 1.5px solid rgba(232,52,42,0.15);
+    border-radius: 16px;
+    padding: 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(61,26,10,0.7);
+  }
+
+  .honguito-opt-btn:hover, .honguito-opt-btn.selected {
+    background: rgba(232,52,42,0.2);
+    border-color: rgba(232,52,42,0.5);
+    color: #3d1a0a;
+    transform: scale(1.03);
+  }
+
+  .honguito-opt-btn .opt-icon { font-size: 22px; display:block; margin-bottom:4px; }
+
+  /* Virtues panel */
+  #virtues-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(252,228,236,0.6);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+
+  #virtues-panel.open { opacity: 1; pointer-events: all; }
+
+  .virtues-card {
+    background: linear-gradient(160deg, #fff0f8 0%, #f0f4ff 100%);
+    border: 1.5px solid rgba(92,45,110,0.15);
+    border-radius: 32px;
+    padding: 28px;
+    max-width: 440px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 64px rgba(92,45,110,0.15);
+  }
+
+  .virtues-header { text-align: center; margin-bottom: 24px; }
+
+  .virtues-title { font-size: 26px; font-weight: 900; color: #3d1a0a; margin-bottom: 4px; }
+
+  .virtues-subtitle { font-size: 14px; color: rgba(61,26,10,0.5); font-style: italic; }
+
+  .virtue-item { margin-bottom: 20px; }
+
+  .virtue-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+
+  .virtue-name { font-size: 15px; font-weight: 700; color: #3d1a0a; }
+
+  .virtue-level {
+    font-size: 12px; font-weight: 700;
+    color: #5c2d6e;
+    background: rgba(92,45,110,0.1);
+    border-radius: 999px;
+    padding: 2px 10px;
+  }
+
+  .virtue-bar-bg { height: 8px; background: rgba(61,26,10,0.08); border-radius: 999px; overflow: hidden; }
+
+  .virtue-bar-fill { height: 100%; border-radius: 999px; transition: width 0.8s ease; }
+
+  .virtue-pct { font-size: 11px; color: rgba(61,26,10,0.4); margin-top: 4px; text-align: right; }
+
+  .virtues-close {
+    width: 100%;
+    background: rgba(232,52,42,0.08);
+    border: 1.5px solid rgba(232,52,42,0.2);
+    border-radius: 999px;
+    padding: 13px;
+    color: #5c2d6e;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: all 0.2s;
+  }
+
+  .virtues-close:hover { background: rgba(232,52,42,0.15); }
+
+  /* Tesoros panel */
+  #tesoros-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(10,5,20,0.7);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+
+  #tesoros-panel.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .tesoros-card {
+    background: linear-gradient(160deg, #fff5e6, #ffe8d6);
+    border-radius: 32px;
+    padding: 28px;
+    max-width: 460px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  .tesoros-title {
+    font-size: 24px;
+    font-weight: 900;
+    color: #3d1a0a;
+    margin-bottom: 4px;
+  }
+
+  .tesoros-sub {
+    font-size: 13px;
+    color: rgba(61,26,10,0.5);
+    margin-bottom: 20px;
+    font-style: italic;
+  }
+
+  .tesoro-category {
+    margin-bottom: 16px;
+  }
+
+  .tesoro-cat-header {
+    font-size: 14px;
+    font-weight: 800;
+    color: #3d1a0a;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tesoro-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tesoro-tag {
+    background: rgba(232,52,42,0.08);
+    border: 1.5px solid rgba(232,52,42,0.15);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(61,26,10,0.7);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tesoro-tag:hover {
+    background: rgba(232,52,42,0.2);
+    border-color: rgba(232,52,42,0.4);
+    color: #3d1a0a;
+    transform: scale(1.05);
+  }
+
+  .tesoro-tag.logged {
+    background: rgba(232,52,42,0.25);
+    border-color: rgba(232,52,42,0.6);
+    color: #c41f16;
+  }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(232,52,42,0.95);
+    color: #fff5e6;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 12px 24px;
+    border-radius: 999px;
+    z-index: 200;
+    opacity: 0;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 24px rgba(232,52,42,0.4);
+    text-align: center;
+    max-width: 300px;
+    pointer-events: none;
+  }
+
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Room label tooltip */
+  #room-tooltip {
+    position: fixed;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,245,230,0.95);
+    color: #3d1a0a;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  #room-tooltip.show { opacity: 1; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(232,52,42,0.3); border-radius: 999px; }
+
+  /* Snow particles */
+  .snow-particle {
+    position: fixed;
+    color: rgba(255,255,255,0.7);
+    font-size: 10px;
+    pointer-events: none;
+    z-index: 5;
+    animation: snowfall linear infinite;
+  }
+
+  /* ═══ TESOROS / MUSEO INTERIOR ═══ */
+  #tesoros-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    background: rgba(252,228,236,0.55);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    overflow-y: auto;
+  }
+  #tesoros-panel.open { opacity:1; pointer-events:all; }
+  .tesoros-card {
+    background: linear-gradient(160deg, #fff0f8 0%, #fff8f0 100%);
+    border-radius: 0 0 32px 32px;
+    padding: 0 20px 40px;
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    position: relative;
+  }
+  .tesoros-close-btn {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    width: calc(100% + 40px);
+    margin: 0 -20px 20px;
+    background: rgba(255,245,240,0.95);
+    backdrop-filter: blur(8px);
+    border: none;
+    border-bottom: 1px solid rgba(232,52,42,0.1);
+    padding: 14px 20px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(61,26,10,0.55);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .tesoros-hero { text-align:center; padding:0 0 20px; border-bottom:1px solid rgba(232,52,42,0.1); margin-bottom:20px; }
+  .tesoros-hero-icon { font-size:44px; margin-bottom:4px; }
+  .tesoros-hero-title { font-size:22px; font-weight:900; color:#3d1a0a; margin-bottom:2px; }
+  .tesoros-hero-sub { font-size:13px; color:rgba(61,26,10,0.5); font-style:italic; margin-bottom:12px; }
+  .tesoros-stats { display:flex; justify-content:center; gap:20px; }
+  .tesoros-stat { text-align:center; }
+  .tesoros-stat-num { font-size:22px; font-weight:900; color:#E8342A; line-height:1; }
+  .tesoros-stat-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:rgba(61,26,10,0.4); }
+  .tesoros-tabs { display:flex; gap:6px; margin-bottom:18px; overflow-x:auto; padding-bottom:4px; }
+  .tesoros-tab {
+    flex-shrink:0;
+    background:rgba(255,255,255,0.7);
+    border:1.5px solid rgba(232,52,42,0.15);
+    border-radius:999px;
+    padding:7px 14px;
+    font-family:'Nunito',sans-serif;
+    font-size:13px; font-weight:700;
+    color:rgba(61,26,10,0.55);
+    cursor:pointer;
+    transition:all 0.2s;
+  }
+  .tesoros-tab.active { background:rgba(232,52,42,0.1); border-color:rgba(232,52,42,0.4); color:#c41f16; }
+  .tesoro-cat-section { margin-bottom:22px; }
+  .tesoro-cat-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .tesoro-cat-title { font-size:15px; font-weight:800; color:#3d1a0a; display:flex; align-items:center; gap:6px; }
+  .tesoro-cat-count { font-size:11px; font-weight:700; color:rgba(61,26,10,0.4); background:rgba(61,26,10,0.07); border-radius:999px; padding:2px 8px; }
+  .tesoros-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  .tesoro-item {
+    background:rgba(255,255,255,0.75);
+    border:1.5px solid rgba(232,52,42,0.12);
+    border-radius:16px;
+    padding:10px;
+    cursor:pointer;
+    transition:all 0.2s;
+    position:relative;
+  }
+  .tesoro-item:active { transform:scale(0.97); }
+  .tesoro-item-photo { width:100%; aspect-ratio:4/5; object-fit:cover; border-radius:10px; margin-bottom:6px; display:block; }
+  .tesoro-item-icon { font-size:28px; margin-bottom:4px; display:block; }
+  .tesoro-item-name { font-size:13px; font-weight:700; color:#3d1a0a; line-height:1.3; margin-bottom:2px; }
+  .tesoro-item-date { font-size:10px; color:rgba(61,26,10,0.4); }
+  .tesoro-rareza-dot { position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; }
+  .rareza-comun     { background:#9ca3af; }
+  .rareza-especial  { background:#22c55e; }
+  .rareza-raro      { background:#3b82f6; }
+  .rareza-legendario{ background:#a855f7; box-shadow:0 0 6px rgba(168,85,247,0.5); }
+  .tesoro-add-btn {
+    width:100%;
+    background:rgba(232,52,42,0.05);
+    border:1.5px dashed rgba(232,52,42,0.22);
+    border-radius:16px;
+    padding:13px;
+    font-family:'Nunito',sans-serif;
+    font-size:13px; font-weight:700;
+    color:rgba(232,52,42,0.55);
+    cursor:pointer;
+    transition:all 0.2s;
+    margin-top:8px;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .tesoro-add-btn:active { background:rgba(232,52,42,0.1); }
+  .logro-item {
+    display:flex; align-items:center; gap:12px;
+    background:rgba(255,255,255,0.7);
+    border:1.5px solid rgba(232,52,42,0.1);
+    border-radius:16px;
+    padding:12px 14px;
+    margin-bottom:8px;
+  }
+  .logro-item.done { background:linear-gradient(135deg,rgba(255,182,193,0.2),rgba(255,220,150,0.15)); border-color:rgba(232,52,42,0.3); }
+  .logro-icon { font-size:26px; flex-shrink:0; }
+  .logro-info { flex:1; min-width:0; }
+  .logro-name { font-size:14px; font-weight:800; color:#3d1a0a; margin-bottom:1px; }
+  .logro-item.done .logro-name { color:#c41f16; }
+  .logro-desc { font-size:11px; color:rgba(61,26,10,0.45); margin-bottom:4px; }
+  .logro-bar-bg { height:5px; background:rgba(61,26,10,0.08); border-radius:999px; overflow:hidden; }
+  .logro-bar-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,#f9a8d4,#E8342A); transition:width 0.6s ease; }
+  .logro-pct { font-size:11px; font-weight:700; color:rgba(61,26,10,0.4); flex-shrink:0; }
+  /* Create / Detail modals */
+  #tesoro-create-modal, #tesoro-detail-modal {
+    position:fixed; inset:0; z-index:95;
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    background:rgba(252,228,236,0.7);
+    backdrop-filter:blur(10px);
+    opacity:0; pointer-events:none;
+    transition:opacity 0.3s ease;
+  }
+  #tesoro-create-modal.open, #tesoro-detail-modal.open { opacity:1; pointer-events:all; }
+  .tesoro-create-card {
+    background:linear-gradient(160deg,#fff0f8,#fffaf0);
+    border:1.5px solid rgba(232,52,42,0.15);
+    border-radius:28px;
+    padding:28px 22px;
+    width:100%; max-width:420px;
+    max-height:88vh; overflow-y:auto;
+    position:relative;
+    box-shadow:0 20px 60px rgba(232,52,42,0.15);
+  }
+  .tc-title { font-size:20px; font-weight:900; color:#3d1a0a; margin-bottom:2px; }
+  .tc-subtitle { font-size:13px; color:rgba(61,26,10,0.5); font-style:italic; margin-bottom:16px; }
+  .tc-photo-wrap {
+    width:100%; height:140px;
+    background:rgba(232,52,42,0.05);
+    border:2px dashed rgba(232,52,42,0.2);
+    border-radius:16px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; margin-bottom:14px; overflow:hidden; transition:all 0.2s;
+  }
+  .tc-photo-wrap:active { border-color:rgba(232,52,42,0.4); }
+  .tc-photo-placeholder { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .tc-input {
+    width:100%; background:rgba(255,255,255,0.8);
+    border:1.5px solid rgba(232,52,42,0.15); border-radius:12px;
+    padding:11px 14px; font-family:'Nunito',sans-serif;
+    font-size:14px; color:#3d1a0a; outline:none; margin-bottom:12px;
+  }
+  .tc-section-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:rgba(92,45,110,0.5); margin-bottom:8px; }
+  .tc-rareza-row { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:12px; }
+  .tc-rareza-btn {
+    background:rgba(255,255,255,0.7);
+    border:1.5px solid rgba(61,26,10,0.12);
+    border-radius:12px; padding:8px 4px;
+    font-family:'Nunito',sans-serif; font-size:11px; font-weight:700;
+    color:rgba(61,26,10,0.55); cursor:pointer; text-align:center; line-height:1.4;
+    transition:all 0.2s;
+  }
+  .tc-rareza-btn small { font-size:10px; opacity:0.7; }
+  .tc-rareza-btn.active { background:rgba(232,52,42,0.1); border-color:rgba(232,52,42,0.4); color:#c41f16; }
+  .tc-textarea {
+    width:100%; background:rgba(255,255,255,0.8);
+    border:1.5px solid rgba(232,52,42,0.15); border-radius:12px;
+    padding:10px 14px; font-family:'Nunito',sans-serif;
+    font-size:14px; color:#3d1a0a; resize:none; outline:none; margin-bottom:12px;
+  }
+
+  @keyframes snowfall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 0.8; }
+    100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+  }
+
+  /* ═══════════════════════════════════════════
+     CUENTA REGRESIVA DE LUZ — top widget
+  ═══════════════════════════════════════════ */
+  #luz-widget {
+    position: absolute;
+    top: 68px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: all;
+    z-index: 15;
+  }
+
+  #luz-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(14px);
+    border: 1.5px solid rgba(232,52,42,0.25);
+    border-radius: 999px;
+    padding: 9px 20px 9px 14px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(232,52,42,0.12), inset 0 0 0 1px rgba(255,255,255,0.6);
+  }
+
+  #luz-pill:hover {
+    border-color: rgba(232,52,42,0.45);
+    box-shadow: 0 6px 28px rgba(232,52,42,0.2);
+    transform: translateY(-2px);
+  }
+
+  .luz-arc { position: relative; width: 32px; height: 32px; flex-shrink: 0; }
+  .luz-arc svg { width: 32px; height: 32px; }
+  .luz-arc-bg { fill: none; stroke: rgba(232,52,42,0.12); stroke-width: 3; }
+  .luz-arc-fill {
+    fill: none;
+    stroke: url(#luzGrad);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 82;
+    stroke-dashoffset: 82;
+    transition: stroke-dashoffset 1.2s ease;
+    transform: rotate(-90deg);
+    transform-origin: center;
+  }
+
+  .luz-text-group { display: flex; flex-direction: column; gap: 1px; }
+
+  .luz-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: rgba(92,45,110,0.65);
+  }
+
+  .luz-main { font-size: 14px; font-weight: 800; color: #3d1a0a; line-height: 1.2; }
+  .luz-main .luz-accent { color: #E8342A; }
+
+  /* Luz expand panel */
+  #luz-expanded {
+    position: fixed;
+    inset: 0;
+    z-index: 85;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(252,228,236,0.7);
+    backdrop-filter: blur(12px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+
+  #luz-expanded.open { opacity: 1; pointer-events: all; }
+
+  .luz-card {
+    background: linear-gradient(160deg, #fff0f5 0%, #fff8e7 100%);
+    border: 1.5px solid rgba(232,52,42,0.18);
+    border-radius: 32px;
+    padding: 32px 28px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: 0 24px 60px rgba(232,52,42,0.15);
+    text-align: center;
+    position: relative;
+  }
+
+  .luz-card-icon { font-size: 56px; margin-bottom: 8px; animation: bounce 2.5s ease-in-out infinite; }
+
+  .luz-card-title {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(92,45,110,0.6);
+    margin-bottom: 16px;
+  }
+
+  .luz-big-number {
+    font-size: 72px;
+    font-weight: 900;
+    color: #E8342A;
+    line-height: 1;
+    margin-bottom: 4px;
+    text-shadow: 0 4px 20px rgba(232,52,42,0.25);
+  }
+
+  .luz-big-unit {
+    font-size: 20px;
+    font-weight: 700;
+    color: #5c2d6e;
+    margin-bottom: 20px;
+  }
+
+  /* Live countdown */
+  .luz-live-wrap {
+    background: rgba(232,52,42,0.07);
+    border: 1px solid rgba(232,52,42,0.15);
+    border-radius: 20px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+  }
+
+  .luz-live-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: rgba(92,45,110,0.5);
+    margin-bottom: 8px;
+  }
+
+  .luz-countdown-digits {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    font-size: 28px;
+    font-weight: 900;
+    color: #3d1a0a;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+  }
+
+  .luz-digit-block {
+    background: rgba(255,255,255,0.8);
+    border-radius: 10px;
+    padding: 4px 8px;
+    min-width: 44px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(232,52,42,0.1);
+  }
+
+  .luz-digit-sep { color: rgba(232,52,42,0.5); margin: 0 -2px; }
+
+  .luz-digit-sub {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(92,45,110,0.5);
+    text-align: center;
+    margin-top: 4px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .luz-poem {
+    font-size: 15px;
+    font-style: italic;
+    color: rgba(61,26,10,0.65);
+    line-height: 1.6;
+    margin-bottom: 20px;
+    border-left: 3px solid rgba(232,52,42,0.3);
+    padding-left: 14px;
+    text-align: left;
+  }
+
+  /* Arc progress large */
+  .luz-arc-large {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 16px;
+  }
+
+  .luz-arc-large svg { width: 120px; height: 120px; }
+
+  .luz-card-close {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: rgba(232,52,42,0.1);
+    border: none;
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    font-size: 16px;
+    cursor: pointer;
+    color: rgba(61,26,10,0.5);
+    display: flex; align-items:center; justify-content:center;
+    transition: all 0.2s;
+  }
+
+  .luz-card-close:hover { background: rgba(232,52,42,0.2); color: #E8342A; }
+
+  /* Mood badge showing current time of day */
+  .luz-mood-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, rgba(232,52,42,0.12), rgba(255,180,100,0.15));
+    border: 1px solid rgba(232,52,42,0.2);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #5c2d6e;
+    margin-bottom: 16px;
+  }
+
+  /* ═══════════════════════════════════════════
+     TERMÓMETRO DE CALIDEZ — panel lateral izq
+  ═══════════════════════════════════════════ */
+  #calor-trigger {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: all;
+    z-index: 15;
+  }
+
+  #calor-fab {
+    width: 48px;
+    height: 80px;
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(232,52,42,0.2);
+    border-radius: 999px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    gap: 4px;
+    box-shadow: 0 4px 16px rgba(232,52,42,0.12);
+  }
+
+  #calor-fab:hover {
+    transform: scale(1.06);
+    border-color: rgba(232,52,42,0.4);
+    box-shadow: 0 8px 24px rgba(232,52,42,0.2);
+  }
+
+  #calor-fab .fab-icon { font-size: 20px; }
+  #calor-fab .fab-label {
+    font-size: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #5c2d6e;
+    writing-mode: horizontal-tb;
+  }
+
+  /* Calidez panel */
+  #calor-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px;
+    background: rgba(252,228,236,0.6);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+
+  #calor-panel.open { opacity: 1; pointer-events: all; }
+
+  .calor-card {
+    background: linear-gradient(160deg, #fff0f8 0%, #fffaf0 100%);
+    border: 1.5px solid rgba(232,52,42,0.15);
+    border-radius: 28px;
+    padding: 28px 24px;
+    width: 310px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(232,52,42,0.15);
+    transform: translateX(-20px);
+    transition: transform 0.35s ease;
+  }
+
+  #calor-panel.open .calor-card { transform: translateX(0); }
+
+  .calor-title {
+    font-size: 19px;
+    font-weight: 900;
+    color: #3d1a0a;
+    margin-bottom: 2px;
+  }
+
+  .calor-sub {
+    font-size: 12px;
+    color: rgba(61,26,10,0.5);
+    font-style: italic;
+    margin-bottom: 22px;
+  }
+
+  /* Slider */
+  .calor-slider-wrap {
+    margin-bottom: 22px;
+  }
+
+  .calor-slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .calor-slider-label {
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .calor-slider-label.cold { color: #5b8def; }
+  .calor-slider-label.warm { color: #e8342a; }
+
+  .calor-slider-track {
+    position: relative;
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #93c5fd 0%, #c4b5fd 40%, #fca5a5 75%, #fbbf24 100%);
+    margin-bottom: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  #calor-slider {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+    -webkit-appearance: none;
+  }
+
+  .calor-thumb {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff5e6;
+    border: 2.5px solid #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    pointer-events: none;
+    transition: left 0.05s;
+  }
+
+  .calor-value-display {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,245,230,0.6);
+    margin-top: 12px;
+  }
+
+  .calor-section-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255,245,230,0.4);
+    margin-bottom: 10px;
+  }
+
+  .calor-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 18px;
+  }
+
+  .calor-badge {
+    background: rgba(255,245,230,0.07);
+    border: 1.5px solid rgba(255,245,230,0.14);
+    border-radius: 999px;
+    padding: 7px 13px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,245,230,0.6);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .calor-badge:hover {
+    background: rgba(255,200,100,0.15);
+    border-color: rgba(255,200,100,0.35);
+    color: #fde68a;
+    transform: scale(1.04);
+  }
+
+  .calor-badge.on {
+    background: linear-gradient(135deg, rgba(232,52,42,0.3), rgba(250,160,40,0.25));
+    border-color: rgba(250,180,60,0.6);
+    color: #fde68a;
+    box-shadow: 0 0 10px rgba(250,160,40,0.2);
+  }
+
+  .calor-save-btn {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(232,52,42,0.8), rgba(200,80,20,0.8));
+    border: none;
+    border-radius: 999px;
+    padding: 12px;
+    color: #fff5e6;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(232,52,42,0.3);
+  }
+
+  .calor-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(232,52,42,0.4);
+  }
+
+  .calor-history {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(61,26,10,0.08);
+  }
+
+  .calor-history-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(92,45,110,0.45);
+    margin-bottom: 10px;
+  }
+
+  .calor-hist-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: rgba(61,26,10,0.5);
+  }
+
+  .calor-hist-bar {
+    flex: 1;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(61,26,10,0.08);
+    overflow: hidden;
+  }
+
+  .calor-hist-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #93c5fd, #fca5a5, #fbbf24);
+  }
+
+  /* ═══════════════════════════════════════════
+     PAISAJES SONOROS — bottom-right widget
+  ═══════════════════════════════════════════ */
+  #sonidos-trigger {
+    position: absolute;
+    right: 20px;
+    bottom: 90px;
+    pointer-events: all;
+    z-index: 15;
+  }
+
+  #sonidos-fab {
+    width: 52px;
+    height: 52px;
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(14px);
+    border: 1.5px solid rgba(232,52,42,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 22px;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 16px rgba(232,52,42,0.15);
+  }
+
+  #sonidos-fab:hover {
+    transform: scale(1.1);
+    border-color: rgba(232,52,42,0.45);
+    box-shadow: 0 8px 24px rgba(232,52,42,0.2);
+  }
+
+  #sonidos-fab.playing {
+    border-color: rgba(232,52,42,0.5);
+    box-shadow: 0 0 0 4px rgba(232,52,42,0.12), 0 8px 24px rgba(232,52,42,0.2);
+    animation: pulse-fab 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-fab {
+    0%,100% { box-shadow: 0 0 0 4px rgba(232,52,42,0.12), 0 8px 24px rgba(232,52,42,0.15); }
+    50% { box-shadow: 0 0 0 8px rgba(232,52,42,0.06), 0 8px 24px rgba(232,52,42,0.15); }
+  }
+
+  /* Sonidos panel */
+  #sonidos-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 20px;
+    background: rgba(252,228,236,0.6);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  #sonidos-panel.open { opacity: 1; pointer-events: all; }
+
+  .sonidos-card {
+    background: linear-gradient(160deg, #fff0f8 0%, #f0f4ff 100%);
+    border: 1.5px solid rgba(92,45,110,0.15);
+    border-radius: 28px;
+    padding: 24px;
+    width: 300px;
+    box-shadow: 0 24px 60px rgba(92,45,110,0.15);
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+  }
+
+  #sonidos-panel.open .sonidos-card { transform: translateY(0); }
+
+  .sonidos-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+
+  .sonidos-title { font-size: 17px; font-weight: 900; color: #3d1a0a; }
+
+  .sonidos-close-btn {
+    background: rgba(232,52,42,0.08);
+    border: none;
+    border-radius: 50%;
+    width: 32px; height: 32px;
+    color: rgba(61,26,10,0.5);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items:center; justify-content:center;
+    transition: all 0.2s;
+  }
+
+  .sonidos-close-btn:hover { background: rgba(232,52,42,0.15); color: #E8342A; }
+
+  /* Channel rows */
+  .canal-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(61,26,10,0.07);
+  }
+
+  .canal-row:last-of-type { border-bottom: none; }
+
+  .canal-play-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(232,52,42,0.2);
+    background: rgba(255,255,255,0.6);
+    color: rgba(61,26,10,0.6);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex; align-items:center; justify-content:center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .canal-play-btn:hover {
+    background: rgba(255,220,220,0.7);
+    border-color: rgba(232,52,42,0.4);
+    color: #c41f16;
+  }
+
+  .canal-play-btn.active {
+    background: linear-gradient(135deg, rgba(232,52,42,0.2), rgba(255,180,100,0.2));
+    border-color: rgba(232,52,42,0.5);
+    color: #c41f16;
+    box-shadow: 0 0 12px rgba(232,52,42,0.15);
+  }
+
+  .canal-info { flex: 1; min-width: 0; }
+
+  .canal-name { font-size: 13px; font-weight: 700; color: #3d1a0a; margin-bottom: 3px; }
+
+  /* Volume slider */
+  .canal-vol {
+    position: relative;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(61,26,10,0.1);
+    cursor: pointer;
+  }
+
+  .canal-vol-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #f9a8d4, #fbbf24);
+    pointer-events: none;
+  }
+
+  .canal-vol input[type=range] {
+    position: absolute;
+    inset: -6px 0;
+    width: 100%;
+    opacity: 0;
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin: 0;
+    height: 16px;
+  }
+
+  /* Master volume */
+  .master-vol-wrap {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,245,230,0.07);
+  }
+
+  .master-vol-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: rgba(255,245,230,0.4);
+    margin-bottom: 8px;
+  }
+
+  .master-vol-track {
+    position: relative;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(61,26,10,0.08);
+  }
+
+  .master-vol-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #f9a8d4, #e8342a);
+  }
+
+  .master-vol-track input[type=range] {
+    position: absolute;
+    inset: -6px 0;
+    width: 100%;
+    opacity: 0;
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin: 0;
+    height: 18px;
+  }
+
+  /* Sleep timer */
+  .sleep-wrap {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(61,26,10,0.07);
+  }
+
+  .sleep-label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: rgba(92,45,110,0.5);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #sleep-countdown { font-size: 12px; font-weight: 700; color: #E8342A; }
+
+  .sleep-btns { display: flex; gap: 6px; }
+
+  .sleep-btn {
+    flex: 1;
+    background: rgba(255,255,255,0.6);
+    border: 1.5px solid rgba(232,52,42,0.15);
+    border-radius: 999px;
+    padding: 7px 4px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(61,26,10,0.55);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .sleep-btn:hover {
+    background: rgba(255,200,200,0.5);
+    border-color: rgba(232,52,42,0.35);
+    color: #c41f16;
+  }
+
+  .sleep-btn.active {
+    background: rgba(232,52,42,0.12);
+    border-color: rgba(232,52,42,0.45);
+    color: #c41f16;
+  }
+
+  /* Waveform animation for active channel */
+  .canal-wave {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 16px;
+    margin-left: 2px;
+  }
+
+  .canal-wave span {
+    width: 2px;
+    border-radius: 1px;
+    background: #fde68a;
+    animation: wave-bar 0.8s ease-in-out infinite;
+    display: none;
+  }
+
+  .canal-wave span:nth-child(2) { animation-delay: 0.15s; }
+  .canal-wave span:nth-child(3) { animation-delay: 0.3s; }
+  .canal-wave span:nth-child(4) { animation-delay: 0.45s; }
+
+  .canal-wave.playing span { display: block; }
+
+  @keyframes wave-bar {
+    0%,100% { height: 4px; }
+    50% { height: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+<div id="ui">
+  <div id="header">
+    <div id="logo">🍄 <span>Honguito</span> Rojo</div>
+    <div id="snow-count">
+      <span class="flake">❄️</span>
+      <span id="snow-number">0</span> copitos
+    </div>
+  </div>
+
+  <div id="bottom-nav">
+    <button class="nav-btn" onclick="showVirtues()">🌟 Mi Invierno</button>
+    <button class="nav-btn" id="btn-central" onclick="openRoom('honguito')">🍄 Inicio</button>
+    <button class="nav-btn" onclick="showTesoros()">💎 Tesoros</button>
+  </div>
+
+  <!-- CUENTA REGRESIVA DE LUZ -->
+  <div id="luz-widget">
+    <div id="luz-pill" onclick="cycleLuzDetail()">
+      <div class="luz-arc">
+        <svg viewBox="0 0 32 32">
+          <defs>
+            <linearGradient id="luzGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#1e3a8a"/>
+              <stop offset="100%" stop-color="#fbbf24"/>
+            </linearGradient>
+          </defs>
+          <circle class="luz-arc-bg" cx="16" cy="16" r="13"/>
+          <circle class="luz-arc-fill" id="luz-arc-circle" cx="16" cy="16" r="13"/>
+        </svg>
+      </div>
+      <div class="luz-text-group">
+        <div class="luz-label" id="luz-label-top">Solsticio de Invierno</div>
+        <div class="luz-main" id="luz-main-text">calculando...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERMÓMETRO DE CALIDEZ — trigger -->
+  <div id="calor-trigger">
+    <div id="calor-fab" onclick="showCalor()">
+      <span class="fab-icon">🌡️</span>
+      <span class="fab-label">Calidez</span>
+    </div>
+  </div>
+
+  <!-- SONIDOS — trigger fab -->
+  <div id="sonidos-trigger">
+    <div id="sonidos-fab" onclick="showSonidos()">🎵</div>
+  </div>
+</div><!-- end #ui -->
+
+<!-- ═══ TERMÓMETRO DE CALIDEZ PANEL ═══ -->
+<div id="calor-panel">
+  <div class="calor-card">
+    <button class="modal-close" onclick="closeCalor()" style="position:absolute;top:14px;right:14px">✕</button>
+    <div class="calor-title">🌡️ Termómetro de Calidez</div>
+    <div class="calor-sub">¿Cómo se siente tu día hoy?</div>
+
+    <div class="calor-slider-wrap">
+      <div class="calor-slider-labels">
+        <span class="calor-slider-label cold">❄️ Fresco</span>
+        <span class="calor-slider-label warm">🔥 Cálido</span>
+      </div>
+      <div class="calor-slider-track">
+        <input type="range" id="calor-slider" min="0" max="100" value="50" oninput="onCalorSlide(this.value)">
+        <div class="calor-thumb" id="calor-thumb" style="left:50%"></div>
+      </div>
+      <div class="calor-value-display" id="calor-value-label">Tibio y tranquilo ✨</div>
+    </div>
+
+    <div class="calor-section-title">☕ Bebida</div>
+    <div class="calor-badges" id="badges-bebida">
+      <button class="calor-badge" onclick="toggleBadge(this,'beb_te')">☕ Té calentito</button>
+      <button class="calor-badge" onclick="toggleBadge(this,'beb_choco')">🍫 Chocolate con canela</button>
+      <button class="calor-badge" onclick="toggleBadge(this,'beb_infusion')">🍵 Infusión de hierbas</button>
+    </div>
+
+    <div class="calor-section-title">🧣 Abrigo</div>
+    <div class="calor-badges" id="badges-abrigo">
+      <button class="calor-badge" onclick="toggleBadge(this,'abr_manta')">🛋️ Manta suave</button>
+      <button class="calor-badge" onclick="toggleBadge(this,'abr_calcetines')">🧦 Calcetines de lana</button>
+    </div>
+
+    <div class="calor-section-title">🕯️ Ambiente</div>
+    <div class="calor-badges" id="badges-ambiente">
+      <button class="calor-badge" onclick="toggleBadge(this,'amb_vela')">🔥 Velita encendida</button>
+      <button class="calor-badge" onclick="toggleBadge(this,'amb_mascota')">🐾 Mascota cerca</button>
+    </div>
+
+    <button class="calor-save-btn" onclick="saveCalor()">Guardar mi día 🌡️</button>
+
+    <div class="calor-history" id="calor-history-wrap">
+      <div class="calor-history-title">Últimos días</div>
+      <div id="calor-history-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAISAJES SONOROS PANEL ═══ -->
+<div id="sonidos-panel">
+  <div class="sonidos-card">
+    <div class="sonidos-header">
+      <div class="sonidos-title">🎵 Paisajes Sonoros</div>
+      <button class="sonidos-close-btn" onclick="closeSonidos()">✕</button>
+    </div>
+
+    <!-- Canal 1: Piano -->
+    <div class="canal-row" id="canal-row-0">
+      <button class="canal-play-btn" id="canal-btn-0" onclick="toggleCanal(0)">▶</button>
+      <div class="canal-info">
+        <div class="canal-name">🎹 Piano minimalista</div>
+        <div class="canal-vol">
+          <div class="canal-vol-fill" id="vol-fill-0" style="width:70%"></div>
+          <input type="range" min="0" max="100" value="70" oninput="setVolCanal(0,this.value)">
+        </div>
+      </div>
+      <div class="canal-wave" id="wave-0">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Canal 2: Caja de música -->
+    <div class="canal-row" id="canal-row-1">
+      <button class="canal-play-btn" id="canal-btn-1" onclick="toggleCanal(1)">▶</button>
+      <div class="canal-info">
+        <div class="canal-name">🪗 Caja de música</div>
+        <div class="canal-vol">
+          <div class="canal-vol-fill" id="vol-fill-1" style="width:60%"></div>
+          <input type="range" min="0" max="100" value="60" oninput="setVolCanal(1,this.value)">
+        </div>
+      </div>
+      <div class="canal-wave" id="wave-1">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Canal 3: Cuenco tibetano -->
+    <div class="canal-row" id="canal-row-2">
+      <button class="canal-play-btn" id="canal-btn-2" onclick="toggleCanal(2)">▶</button>
+      <div class="canal-info">
+        <div class="canal-name">🎶 Cuenco tibetano</div>
+        <div class="canal-vol">
+          <div class="canal-vol-fill" id="vol-fill-2" style="width:55%"></div>
+          <input type="range" min="0" max="100" value="55" oninput="setVolCanal(2,this.value)">
+        </div>
+      </div>
+      <div class="canal-wave" id="wave-2">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Canal 4: Ronroneo -->
+    <div class="canal-row" id="canal-row-3">
+      <button class="canal-play-btn" id="canal-btn-3" onclick="toggleCanal(3)">▶</button>
+      <div class="canal-info">
+        <div class="canal-name">🐱 Ronroneo de gato</div>
+        <div class="canal-vol">
+          <div class="canal-vol-fill" id="vol-fill-3" style="width:55%"></div>
+          <input type="range" min="0" max="100" value="55" oninput="setVolCanal(3,this.value)">
+        </div>
+      </div>
+      <div class="canal-wave" id="wave-3">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Master volume -->
+    <div class="master-vol-wrap">
+      <div class="master-vol-label">
+        <span>Volumen general</span>
+        <span id="master-vol-pct">70%</span>
+      </div>
+      <div class="master-vol-track">
+        <div class="master-vol-fill" id="master-vol-fill" style="width:70%"></div>
+        <input type="range" min="0" max="100" value="70" oninput="setMasterVol(this.value)">
+      </div>
+    </div>
+
+    <!-- Sleep timer -->
+    <div class="sleep-wrap">
+      <div class="sleep-label">
+        <span>😴 Temporizador</span>
+        <span id="sleep-countdown"></span>
+      </div>
+      <div class="sleep-btns">
+        <button class="sleep-btn" id="sleep-15" onclick="setSleepTimer(15)">15 min</button>
+        <button class="sleep-btn" id="sleep-30" onclick="setSleepTimer(30)">30 min</button>
+        <button class="sleep-btn" id="sleep-60" onclick="setSleepTimer(60)">60 min</button>
+        <button class="sleep-btn" id="sleep-off" onclick="clearSleepTimer()">✕ Off</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LUZ EXPANDED PANEL ═══ -->
+<div id="luz-expanded">
+  <div class="luz-card">
+    <button class="luz-card-close" onclick="closeLuzExpanded()">✕</button>
+    <div class="luz-card-icon" id="luz-exp-icon">❄️</div>
+    <div class="luz-mood-badge" id="luz-mood-badge">🌅 Buenos días</div>
+    <div class="luz-card-title" id="luz-exp-title">SOLSTICIO DE INVIERNO</div>
+
+    <div class="luz-big-number" id="luz-exp-number">3</div>
+    <div class="luz-big-unit" id="luz-exp-unit">días para el corazón del invierno</div>
+
+    <!-- Arc grande -->
+    <div class="luz-arc-large">
+      <svg viewBox="0 0 120 120">
+        <defs>
+          <linearGradient id="luzGradLarge" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#3b82f6"/>
+            <stop offset="100%" stop-color="#fbbf24"/>
+          </linearGradient>
+        </defs>
+        <circle fill="none" stroke="rgba(232,52,42,0.1)" stroke-width="8" cx="60" cy="60" r="50"/>
+        <circle id="luz-exp-arc" fill="none" stroke="url(#luzGradLarge)" stroke-width="8"
+          stroke-linecap="round" cx="60" cy="60" r="50"
+          stroke-dasharray="314" stroke-dashoffset="314"
+          transform="rotate(-90 60 60)" style="transition:stroke-dashoffset 1.5s ease"/>
+      </svg>
+    </div>
+
+    <!-- Live countdown -->
+    <div class="luz-live-wrap">
+      <div class="luz-live-label">⏱ Cuenta regresiva en vivo</div>
+      <div class="luz-countdown-digits">
+        <div class="luz-digit-block" id="lcd-d">00</div>
+        <span class="luz-digit-sep">:</span>
+        <div class="luz-digit-block" id="lcd-h">00</div>
+        <span class="luz-digit-sep">:</span>
+        <div class="luz-digit-block" id="lcd-m">00</div>
+        <span class="luz-digit-sep">:</span>
+        <div class="luz-digit-block" id="lcd-s">00</div>
+      </div>
+      <div class="luz-digit-sub">
+        <span>días</span><span>horas</span><span>min</span><span>seg</span>
+      </div>
+    </div>
+
+    <div class="luz-poem" id="luz-exp-poem">
+      "El invierno no es el final de la luz,<br>es su descanso más honesto."
+    </div>
+  </div>
+</div>
+
+<!-- Firebase Login Screen -->
+<div id="login-screen" style="
+  position:fixed;inset:0;z-index:200;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#fff0f8,#fff5e6);
+  font-family:'Nunito',sans-serif;
+  padding:32px;
+">
+  <div style="font-size:72px;margin-bottom:12px;animation:bounce 2s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(232,52,42,0.4))">🍄</div>
+  <div style="font-size:28px;font-weight:900;color:#3d1a0a;text-align:center;margin-bottom:6px">Honguito Rojo</div>
+  <div style="font-size:15px;color:rgba(61,26,10,0.55);text-align:center;margin-bottom:8px;font-style:italic">Bienvenida de vuelta a casa.</div>
+  <div style="font-size:13px;color:rgba(61,26,10,0.4);text-align:center;margin-bottom:32px;max-width:280px;line-height:1.5">
+    Inicia sesión para que tus copitos, respuestas y tesoros se guarden en todos tus dispositivos.
+  </div>
+  <button id="google-login-btn" onclick="loginWithGoogle()" style="
+    display:flex;align-items:center;gap:10px;
+    background:#fff;border:1.5px solid rgba(61,26,10,0.15);
+    border-radius:999px;padding:14px 28px;
+    font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;
+    color:#3d1a0a;cursor:pointer;
+    box-shadow:0 4px 20px rgba(0,0,0,0.1);
+    transition:all 0.2s;
+  ">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22" height="22">
+    Entrar con Google
+  </button>
+  <div id="login-error" style="margin-top:16px;font-size:13px;color:#E8342A;text-align:center;display:none"></div>
+  <div id="login-loading" style="margin-top:16px;font-size:13px;color:rgba(61,26,10,0.45);display:none">Cargando tu casita... 🍄</div>
+</div>
+
+<!-- Welcome -->
+<div id="room-tooltip"></div>
+<div id="welcome-screen">
+  <div class="welcome-mushroom">🍄</div>
+  <div class="welcome-title">Bienvenida de vuelta<br><span>a casa.</span></div>
+  <div class="welcome-sub">Invierno en el corazón</div>
+  <div class="welcome-quote">"Ven. Siéntate un momento.<br>Cuéntame cómo estás."</div>
+  <button class="welcome-btn" onclick="enterApp()">Entrar a casa ❄️</button>
+</div>
+
+<!-- Room modal -->
+<div id="room-modal">
+  <div class="modal-card" id="modal-card-content"></div>
+</div>
+
+<!-- Virtues panel -->
+<div id="virtues-panel">
+  <div class="virtues-card">
+    <div class="virtues-header">
+      <div style="font-size:40px;margin-bottom:8px;">🌟</div>
+      <div class="virtues-title">Mi Invierno</div>
+      <div class="virtues-subtitle">"¿En quién te convertiste al volver a casa?"</div>
+    </div>
+    <div id="virtues-list"></div>
+    <button class="virtues-close" onclick="closeVirtues()">Cerrar ✕</button>
+  </div>
+</div>
+
+<!-- Tesoros panel -->
+<div id="tesoros-panel">
+  <div class="tesoros-card" id="tesoros-content"></div>
+</div>
+
+<!-- Tesoro create modal -->
+<div id="tesoro-create-modal">
+  <div class="tesoro-create-card">
+    <button class="modal-close" onclick="closeTeseroCreate()" style="position:absolute;top:14px;right:14px">✕</button>
+    <div class="tc-title">✨ Nuevo Tesoro</div>
+    <div class="tc-subtitle" id="tc-cat-label">Categoría seleccionada</div>
+
+    <!-- Photo -->
+    <div class="tc-photo-wrap" id="tc-photo-wrap" onclick="document.getElementById('tc-photo-input').click()" style="height:auto;aspect-ratio:4/5;max-height:420px">
+      <div class="tc-photo-placeholder" id="tc-photo-placeholder">
+        <span style="font-size:32px">📸</span>
+        <span style="font-size:13px;color:rgba(61,26,10,0.4);margin-top:4px">Añadir foto (opcional)</span>
+      </div>
+      <img id="tc-photo-preview" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:16px">
+      <input type="file" id="tc-photo-input" accept="image/*" style="display:none" onchange="onTcPhotoChange(this)">
+    </div>
+
+    <!-- Name -->
+    <input type="text" id="tc-name" class="tc-input" placeholder="Nombre del tesoro (opcional) ✨" maxlength="60">
+
+    <!-- Rareza -->
+    <div class="tc-section-label">Rareza</div>
+    <div class="tc-rareza-row" id="tc-rareza-row">
+      <button class="tc-rareza-btn active" data-rareza="comun"    onclick="selectRareza(this)">⚪ Común<br><small>+10 ❄️</small></button>
+      <button class="tc-rareza-btn"        data-rareza="especial" onclick="selectRareza(this)">🟢 Especial<br><small>+15 ❄️</small></button>
+      <button class="tc-rareza-btn"        data-rareza="raro"     onclick="selectRareza(this)">🔵 Raro<br><small>+25 ❄️</small></button>
+      <button class="tc-rareza-btn"        data-rareza="legendario" onclick="selectRareza(this)">🟣 Legendario<br><small>+50 ❄️</small></button>
+    </div>
+
+    <!-- Description — sin límite -->
+    <textarea id="tc-desc" class="tc-textarea" placeholder="Cuéntame sobre este tesoro... escribe todo lo que quieras 🍄" rows="4" style="min-height:100px;resize:vertical"></textarea>
+
+    <button class="btn-primary" style="width:100%;margin-top:4px" onclick="saveTesoro()">
+      Guardar en mi museo 💎
+    </button>
+  </div>
+</div>
+
+<!-- Tesoro detail modal -->
+<div id="tesoro-detail-modal">
+  <div class="tesoro-create-card" id="tesoro-detail-content"></div>
+</div>
+
+<!-- Share modal -->
+<div id="tesoro-share-modal" style="
+  position:fixed;inset:0;z-index:98;
+  display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(252,228,236,0.6);backdrop-filter:blur(8px);
+  opacity:0;pointer-events:none;transition:opacity 0.3s ease;
+  padding:20px;
+">
+  <div style="
+    background:linear-gradient(160deg,#fff0f8,#fffaf0);
+    border:1.5px solid rgba(232,52,42,0.15);
+    border-radius:28px 28px 28px 28px;
+    padding:24px 22px 32px;
+    width:100%;max-width:420px;
+    box-shadow:0 -8px 40px rgba(232,52,42,0.12);
+    position:relative;
+  ">
+    <button class="modal-close" onclick="closeShareModal()" style="position:absolute;top:14px;right:14px">✕</button>
+    <div style="font-size:18px;font-weight:900;color:#3d1a0a;margin-bottom:4px">Compartir tesoro ✨</div>
+    <div style="font-size:13px;color:rgba(61,26,10,0.5);font-style:italic;margin-bottom:18px">Tu momento merece ser compartido</div>
+
+    <!-- Canvas preview -->
+    <canvas id="share-canvas" style="width:100%;border-radius:16px;display:block;margin-bottom:16px;box-shadow:0 4px 20px rgba(232,52,42,0.15)"></canvas>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button onclick="downloadTesoro()" style="
+        width:100%;background:linear-gradient(135deg,#E8342A,#c41f16);
+        border:none;border-radius:999px;padding:13px;
+        font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;
+        color:#fff5e6;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+      ">⬇️ Descargar PNG</button>
+      <button onclick="shareNative()" id="share-native-btn" style="
+        width:100%;background:rgba(255,255,255,0.8);
+        border:1.5px solid rgba(232,52,42,0.2);border-radius:999px;padding:13px;
+        font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;
+        color:#5c2d6e;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+      ">📤 Compartir (Instagram, Facebook…)</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════
+//  DATA & STATE
+// ═══════════════════════════════
+const ROOMS = [
+  { id:'presente', name:'El Presente', icon:'🪞', virtue:'🪞 Autoconocimiento', virtueKey:'autoconocimiento', reward:20, freq:0.6, color:0x9b59b6, desc:'¿Quién vive aquí ahora?', hasQuestion:true },
+  { id:'heridas', name:'Heridas Silenciosas', icon:'💔', virtue:'🦁 Valentía', virtueKey:'valentía', reward:30, freq:0.3, color:0xe74c3c, desc:'Un espacio seguro para mirar lo que duele.', hasQuestion:true },
+  { id:'energia', name:'Energía Perdida', icon:'🔥', virtue:'🌊 Escucha Interior', virtueKey:'escucha', reward:25, freq:0.55, color:0xe67e22, desc:'El cansancio también tiene sabiduría.', hasQuestion:true },
+  { id:'semillas', name:'Las Semillas', icon:'🌱', virtue:'🌟 Esperanza', virtueKey:'esperanza', reward:20, freq:0.7, color:0x2ecc71, desc:'Los sueños que siguen vivos.', hasQuestion:true },
+  { id:'alma', name:'El Alma', icon:'🌙', virtue:'🌙 Profundidad', virtueKey:'profundidad', reward:40, freq:0.2, color:0x3498db, desc:'Reflexiones del fondo del corazón.', hasQuestion:true },
+  { id:'sabiduria', name:'La Sabiduría', icon:'📖', virtue:'📚 Sabiduría', virtueKey:'sabiduría', reward:20, freq:0.65, color:0xf39c12, desc:'Lo que ya aprendiste.', hasQuestion:true },
+  { id:'gratitud', name:'La Gratitud', icon:'💛', virtue:'🌞 Apreciación', virtueKey:'apreciación', reward:15, freq:0.9, color:0xf1c40f, desc:'Lo que ya existe y es hermoso.', hasQuestion:true },
+  { id:'consuelo', name:'El Consuelo', icon:'☕', virtue:'🤗 Autocuidado', virtueKey:'autocuidado', reward:15, freq:0.85, color:0x8e44ad, desc:'Calma y cuidado propio.', hasQuestion:true },
+  { id:'recuerdos', name:'Los Recuerdos', icon:'🧸', virtue:'💌 Memoria', virtueKey:'memoria', reward:15, freq:0.6, color:0x1abc9c, desc:'Guardar lo que vale.', hasQuestion:true },
+  { id:'honguito', name:'Honguito Rojo', icon:'🍄', virtue:'💗 Amor Propio', virtueKey:'amor', reward:23, freq:1.0, color:0xe8342a, desc:'Solo estar. Solo existir.', hasQuestion:false },
+];
+
+const ROOM_QUESTIONS = {
+  presente: [
+    "¿Qué es importante para mí hoy que hace un año no lo era?",
+    "¿Qué parte de mi vida se siente más auténtica actualmente?",
+    "¿Qué cosas me emocionan últimamente?",
+    "¿Qué ya no me representa?",
+    "¿Qué versión de mí está tomando fuerza?",
+    "¿Qué estoy aprendiendo sobre mí?",
+    "¿Qué necesito más que antes?",
+    "¿Qué necesito menos que antes?",
+    "¿Qué límites estoy empezando a poner?",
+    "¿Qué me sorprende de mí actualmente?",
+    "¿Qué me da orgullo de quien soy hoy?",
+    "¿Qué estoy dejando atrás?",
+    "¿Qué me gustaría que otros entendieran sobre mí?",
+    "¿Qué hábito refleja mejor quién soy ahora?",
+    "¿Qué deseo ya no tiene sentido para mí?",
+    "¿Qué deseo ha cobrado más importancia?",
+    "¿Cómo describiría mi energía actual?",
+    "¿Qué parte de mí necesita más espacio?",
+    "¿Qué estoy tolerando menos que antes?",
+    "¿Qué me hace sentir más yo misma?",
+    "¿Qué nueva faceta estoy descubriendo?",
+    "¿Qué valor guía mis decisiones hoy?",
+    "¿Qué estoy protegiendo actualmente?",
+    "¿Qué me gustaría explorar más?",
+    "¿Qué he aprendido de mis cambios recientes?",
+    "¿Qué me hace sentir viva?",
+    "¿Qué palabra describe mejor esta etapa de mi vida?",
+    "¿Qué estoy construyendo dentro de mí?",
+    "¿Qué quiero conservar de mi versión actual?",
+    "Si conociera a la Flor de hace un año, ¿qué le sorprendería de mí?",
+  ],
+  heridas: [
+    "¿Qué me duele más de lo que admito?",
+    "¿Qué sigo esperando que ocurra?",
+    "¿Qué me cuesta aceptar?",
+    "¿Qué herida intenta llamar mi atención?",
+    "¿Qué me gustaría dejar de cargar?",
+    "¿Qué pérdida aún estoy procesando?",
+    "¿Qué conversación quedó inconclusa dentro de mí?",
+    "¿Qué ilusión me cuesta soltar?",
+    "¿Qué decepción sigue viva?",
+    "¿Qué parte de mí se siente herida?",
+    "¿Qué me gustaría haber recibido?",
+    "¿Qué sigo reclamándole a la vida?",
+    "¿Qué tristeza aparece con frecuencia?",
+    "¿Qué emoción evito sentir?",
+    "¿Qué me gustaría perdonar?",
+    "¿Qué situación todavía me duele recordar?",
+    "¿Qué necesidad no fue atendida?",
+    "¿Qué me hace sentir vulnerable?",
+    "¿Qué me cuesta nombrar?",
+    "¿Qué me gustaría comprender mejor de mi dolor?",
+    "¿Qué sigo intentando reparar?",
+    "¿Qué me da miedo perder?",
+    "¿Qué sigo sosteniendo por costumbre?",
+    "¿Qué parte de esta historia merece compasión?",
+    "¿Qué me diría una amiga amorosa sobre esta herida?",
+    "¿Qué aprendí de este dolor?",
+    "¿Qué ya no quiero cargar?",
+    "¿Qué me ayudaría a sentir alivio?",
+    "¿Qué merece ser llorado?",
+    "¿Qué está listo para comenzar a sanar?",
+  ],
+  energia: [
+    "¿Qué me está agotando últimamente?",
+    "¿Qué actividad me deja sin energía?",
+    "¿Qué estoy haciendo por obligación?",
+    "¿Qué me gustaría dejar de forzar?",
+    "¿Qué necesita descansar?",
+    "¿Qué me daba energía antes?",
+    "¿Qué ya no me entusiasma como antes?",
+    "¿Qué me está pidiendo mi cuerpo?",
+    "¿Qué me está pidiendo mi mente?",
+    "¿Qué me está pidiendo mi corazón?",
+    "¿Qué expectativa me está pesando?",
+    "¿Qué compromiso podría simplificar?",
+    "¿Qué me devuelve energía rápidamente?",
+    "¿Qué actividad me hace perder la noción del tiempo?",
+    "¿Qué me gustaría hacer más despacio?",
+    "¿Qué me gustaría dejar de perseguir?",
+    "¿Qué me genera agotamiento emocional?",
+    "¿Qué me genera agotamiento mental?",
+    "¿Qué me genera agotamiento físico?",
+    "¿Qué estoy sosteniendo que ya no me corresponde?",
+    "¿Qué señal de cansancio he ignorado?",
+    "¿Qué necesito escuchar hoy?",
+    "¿Qué me haría bien esta semana?",
+    "¿Qué ritmo sería más amable conmigo?",
+    "¿Qué estoy intentando demostrar?",
+    "¿Qué pasaría si me permitiera descansar?",
+    "¿Qué actividad merece una pausa?",
+    "¿Qué me gustaría recuperar de mí?",
+    "¿Qué me ayudaría a sentirme más ligera?",
+    "¿Qué significa para mí fluir en esta etapa de mi vida?",
+  ],
+  semillas: [
+    "¿Qué sueño sigue visitándome aunque pase el tiempo?",
+    "¿Qué me da curiosidad últimamente?",
+    "¿Qué me gustaría explorar sin presión?",
+    "¿Qué deseo aún no ha desaparecido?",
+    "¿Qué me gustaría aprender algún día?",
+    "¿Qué posibilidad me emociona?",
+    "¿Qué parte de mi futuro me genera ilusión?",
+    "¿Qué idea vuelve una y otra vez?",
+    "¿Qué me gustaría intentar aunque no salga perfecto?",
+    "¿Qué experiencia me gustaría vivir?",
+    "¿Qué me gustaría crear?",
+    "¿Qué me gustaría descubrir de mí?",
+    "¿Qué deseo estoy empezando a escuchar más claramente?",
+    "¿Qué me hace imaginar posibilidades?",
+    "¿Qué pequeño paso podría acercarme a algo que deseo?",
+    "¿Qué me inspira últimamente?",
+    "¿Qué proyecto me produce entusiasmo?",
+    "¿Qué me gustaría regalarle a mi yo futura?",
+    "¿Qué parte de mí quiere crecer?",
+    "¿Qué aventura me gustaría vivir?",
+    "¿Qué deseo me sigue acompañando desde hace años?",
+    "¿Qué me gustaría recuperar?",
+    "¿Qué nueva versión de mí puedo imaginar?",
+    "¿Qué tema me gustaría investigar más?",
+    "¿Qué oportunidad me gustaría darme?",
+    "¿Qué me gustaría probar por simple curiosidad?",
+    "¿Qué anhelo merece atención?",
+    "¿Qué me gustaría cultivar durante los próximos meses?",
+    "¿Qué sueño merece seguir vivo?",
+    "¿Qué semilla siento que está despertando dentro de mí?",
+  ],
+  alma: [
+    "¿Qué sabe mi corazón que mi mente aún discute?",
+    "¿Qué verdad estoy empezando a reconocer?",
+    "¿Qué necesita mi alma hoy?",
+    "¿Qué estoy evitando mirar?",
+    "¿Qué me gustaría comprender de mí misma?",
+    "¿Qué pregunta vive dentro de mí desde hace tiempo?",
+    "¿Qué parte de mí está pidiendo atención?",
+    "¿Qué me gustaría preguntarle a mi yo futura?",
+    "¿Qué me gustaría decirle a mi yo del pasado?",
+    "¿Qué me está enseñando esta etapa?",
+    "¿Qué significa para mí vivir una vida auténtica?",
+    "¿Qué estoy llamada a cuidar?",
+    "¿Qué deseo proteger?",
+    "¿Qué me hace sentir profundamente viva?",
+    "¿Qué estoy aprendiendo sobre el amor?",
+    "¿Qué estoy aprendiendo sobre la pérdida?",
+    "¿Qué estoy aprendiendo sobre mí?",
+    "¿Qué verdad me está esperando?",
+    "¿Qué me gustaría recordar siempre?",
+    "¿Qué aspecto de mi vida merece más presencia?",
+    "¿Qué me conecta con algo más grande que yo?",
+    "¿Qué me ayuda a sentir sentido?",
+    "¿Qué me gustaría comprender antes de terminar este año?",
+    "¿Qué estoy dejando atrás en mi alma?",
+    "¿Qué estoy invitando a entrar?",
+    "¿Qué parte de mí necesita confianza?",
+    "¿Qué me gustaría honrar de mi historia?",
+    "¿Qué está intentando nacer dentro de mí?",
+    "¿Qué significa para mí volver a casa?",
+    "Si mi alma pudiera hablar libremente hoy, ¿qué diría?",
+  ],
+  sabiduria: [
+    "¿Qué me enseñó esta semana?",
+    "¿Qué comprensión reciente agradezco?",
+    "¿Qué error terminó enseñándome algo valioso?",
+    "¿Qué patrón estoy empezando a reconocer?",
+    "¿Qué verdad me habría ayudado conocer antes?",
+    "¿Qué situación me hizo crecer?",
+    "¿Qué aprendizaje quiero conservar?",
+    "¿Qué consejo me daría mi versión más sabia?",
+    "¿Qué he aprendido sobre mis límites?",
+    "¿Qué he aprendido sobre mis necesidades?",
+    "¿Qué he aprendido sobre mis relaciones?",
+    "¿Qué experiencia me enseñó más de lo esperado?",
+    "¿Qué me está enseñando este invierno?",
+    "¿Qué me está enseñando el tiempo?",
+    "¿Qué me está enseñando el cambio?",
+    "¿Qué comprensión me trajo paz?",
+    "¿Qué creencia estoy cuestionando?",
+    "¿Qué habilidad emocional estoy desarrollando?",
+    "¿Qué decisión me enseñó algo importante?",
+    "¿Qué aprendizaje surgió de una dificultad?",
+    "¿Qué estoy comprendiendo mejor sobre mí?",
+    "¿Qué me gustaría compartir con alguien más joven?",
+    "¿Qué me enseñó una decepción?",
+    "¿Qué me enseñó una alegría?",
+    "¿Qué me enseñó el amor?",
+    "¿Qué me enseñó la espera?",
+    "¿Qué me enseñó el cansancio?",
+    "¿Qué aprendizaje merece permanecer conmigo?",
+    "¿Qué sabiduría estoy construyendo lentamente?",
+    "¿Qué verdad siento que ya forma parte de mí?",
+  ],
+  gratitud: [
+    "¿Qué hizo mi día un poco más bonito hoy?",
+    "¿Qué doy por sentado y merece ser valorado?",
+    "¿Qué me sostuvo esta semana?",
+    "¿Qué persona agradezco tener en mi vida?",
+    "¿Qué comodidad disfruté hoy?",
+    "¿Qué momento pequeño me hizo sonreír?",
+    "¿Qué experiencia reciente atesoro?",
+    "¿Qué parte de mi hogar agradezco?",
+    "¿Qué habilidad agradezco haber desarrollado?",
+    "¿Qué oportunidad agradezco haber recibido?",
+    "¿Qué recuerdo me llena de gratitud?",
+    "¿Qué parte de mi cuerpo agradezco hoy?",
+    "¿Qué conversación agradezco haber tenido?",
+    "¿Qué me hizo sentir acompañada?",
+    "¿Qué estoy agradeciendo más con el paso del tiempo?",
+    "¿Qué aspecto de mi vida me hace sentir afortunada?",
+    "¿Qué pequeño lujo disfruté hoy?",
+    "¿Qué aprendizaje agradezco haber recibido?",
+    "¿Qué me brindó tranquilidad hoy?",
+    "¿Qué me dio esperanza esta semana?",
+    "¿Qué lugar me hace sentir afortunada?",
+    "¿Qué costumbre agradezco conservar?",
+    "¿Qué me hizo sentir querida?",
+    "¿Qué me permitió descansar?",
+    "¿Qué alegría inesperada apareció hoy?",
+    "¿Qué aspecto de mí agradezco?",
+    "¿Qué decisión agradezco haber tomado?",
+    "¿Qué experiencia difícil terminó enseñándome algo valioso?",
+    "¿Qué merece un gracias silencioso?",
+    "¿Qué riqueza ya existe en mi vida?",
+  ],
+  consuelo: [
+    "¿Qué me dio paz hoy?",
+    "¿Qué necesito escuchar en este momento?",
+    "¿Qué me ayudaría a sentirme acompañada?",
+    "¿Qué me reconfortó recientemente?",
+    "¿Qué necesito menos de mí misma hoy?",
+    "¿Qué sería un acto amable hacia mí?",
+    "¿Qué me haría sentir más segura?",
+    "¿Qué me gustaría regalarme esta semana?",
+    "¿Qué lugar me transmite calma?",
+    "¿Qué recuerdo me abraza cuando lo pienso?",
+    "¿Qué me ayuda a respirar más despacio?",
+    "¿Qué puedo dejar de exigirme?",
+    "¿Qué me gustaría que alguien me dijera hoy?",
+    "¿Qué actividad me reconforta?",
+    "¿Qué me ayuda a recuperar el equilibrio?",
+    "¿Qué me gustaría proteger de mi energía?",
+    "¿Qué necesito para sentirme más cuidada?",
+    "¿Qué me gustaría hacer sin prisa?",
+    "¿Qué me hace sentir a salvo?",
+    "¿Qué pequeño placer puedo disfrutar hoy?",
+    "¿Qué parte de mí necesita ternura?",
+    "¿Qué puedo simplificar?",
+    "¿Qué merece una pausa?",
+    "¿Qué me ayuda a volver a mí?",
+    "¿Qué me gustaría abrazar de mí misma?",
+    "¿Qué me hace sentir en casa?",
+    "¿Qué hábito me cuida?",
+    "¿Qué me devuelve la calma?",
+    "¿Qué me gustaría agradecerme?",
+    "¿Cómo puedo acompañarme mejor hoy?",
+  ],
+  recuerdos: [
+    "¿Qué recuerdo me hace sonreír inmediatamente?",
+    "¿Qué momento de este año quisiera conservar?",
+    "¿Qué recuerdo me da fuerza?",
+    "¿Qué aventura recuerdo con cariño?",
+    "¿Qué persona aparece en uno de mis recuerdos favoritos?",
+    "¿Qué instante quisiera volver a vivir por un día?",
+    "¿Qué recuerdo me hace sentir orgullosa?",
+    "¿Qué pequeña felicidad recuerdo claramente?",
+    "¿Qué celebración guardo con cariño?",
+    "¿Qué momento me hizo sentir muy viva?",
+    "¿Qué lugar vive en mis recuerdos favoritos?",
+    "¿Qué recuerdo me sigue acompañando?",
+    "¿Qué experiencia cambió algo en mí?",
+    "¿Qué conversación nunca olvidé?",
+    "¿Qué recuerdo me hace reír?",
+    "¿Qué recuerdo me da tranquilidad?",
+    "¿Qué recuerdo me conecta con mi infancia?",
+    "¿Qué recuerdo me recuerda quién soy?",
+    "¿Qué recuerdo quisiera guardar en una cajita para siempre?",
+    "¿Qué momento sencillo terminó siendo importante?",
+    "¿Qué recuerdo merece ser contado otra vez?",
+    "¿Qué recuerdo está lleno de luz?",
+    "¿Qué recuerdo me recuerda mi valentía?",
+    "¿Qué recuerdo me recuerda mi ternura?",
+    "¿Qué recuerdo me recuerda mi crecimiento?",
+    "¿Qué momento compartido agradezco haber vivido?",
+    "¿Qué recuerdo me hace sentir acompañada?",
+    "¿Qué instante cambió el rumbo de algo importante?",
+    "¿Qué recuerdo sigue calentando mi corazón?",
+    "¿Qué historia de mi vida merece permanecer?",
+  ],
+};
+
+// Insignias por habitación
+const ROOM_BADGES = {
+  presente:  [
+    { id:'conociendo', icon:'🌱', name:'Me Estoy Conociendo', visits:5 },
+    { id:'honesta',    icon:'🪞', name:'Honesta Conmigo',     visits:15 },
+    { id:'habitante',  icon:'✨', name:'Nueva Habitante',      visits:30 },
+  ],
+  heridas: [
+    { id:'atrevi',   icon:'💔', name:'Me Atreví a Mirar',    visits:5 },
+    { id:'huyendo',  icon:'🩹', name:'Ya No Estoy Huyendo',  visits:15 },
+    { id:'valiente', icon:'🦁', name:'Corazón Valiente',     visits:30 },
+  ],
+  energia: [
+    { id:'ritmo',   icon:'🌧', name:'Bajé el Ritmo',        visits:5 },
+    { id:'escuche', icon:'🔥', name:'Escuché Mi Cansancio', visits:15 },
+    { id:'fluir',   icon:'🌊', name:'Aprendí a Fluir',      visits:30 },
+  ],
+  semillas: [
+    { id:'brote',   icon:'🌱', name:'Pequeño Brote',        visits:5 },
+    { id:'naciendo',icon:'🌸', name:'Algo Está Naciendo',   visits:15 },
+    { id:'guardiana',icon:'🌟',name:'Guardiana de Sueños',  visits:30 },
+  ],
+  alma: [
+    { id:'susurro',  icon:'🌙', name:'Escuché el Susurro',      visits:5 },
+    { id:'profundo', icon:'⭐', name:'Entré en lo Profundo',     visits:15 },
+    { id:'cielo',    icon:'🌌', name:'Conozco Mi Cielo Interior',visits:30 },
+  ],
+  sabiduria: [
+    { id:'aprendiz', icon:'📖', name:'Aprendiz del Invierno',  visits:5 },
+    { id:'observa',  icon:'🦉', name:'Observadora Atenta',     visits:15 },
+    { id:'encarnada',icon:'📚', name:'Sabiduría Encarnada',    visits:30 },
+  ],
+  gratitud: [
+    { id:'belleza',   icon:'🌻', name:'Vi la Belleza',        visits:5 },
+    { id:'agradecida',icon:'🌤', name:'Corazón Agradecido',   visits:15 },
+    { id:'abundancia',icon:'🌞', name:'Abundancia Interior',  visits:30 },
+  ],
+  consuelo: [
+    { id:'descanso', icon:'☕', name:'Pequeño Descanso',  visits:5 },
+    { id:'abrigue',  icon:'🧣', name:'Me Abrigué',        visits:15 },
+    { id:'cuidarme', icon:'🤗', name:'Sé Cuidarme',       visits:30 },
+  ],
+  recuerdos: [
+    { id:'coleccio', icon:'📸', name:'Coleccionista de Instantes', visits:5 },
+    { id:'guardiana',icon:'💌', name:'Guardiana de Recuerdos',     visits:15 },
+    { id:'tejedora', icon:'🕰', name:'Tejedora de Historias',      visits:30 },
+  ],
+  honguito: [
+    { id:'descansar',icon:'🧸', name:'Me Permití Descansar',  visits:3 },
+    { id:'refugio',  icon:'🌤', name:'Habitante del Refugio',  visits:10 },
+    { id:'casa',     icon:'🏡', name:'Volví a Casa',           visits:23 },
+  ],
+};
+
+const WARM_MESSAGES = {
+  gratitud: [
+    "🌞 Lo que aprecias también te transforma.",
+    "💛 La belleza que ves dice mucho de quien eres.",
+    "🌻 Gracias por detenerte a mirar lo bonito.",
+    "☀️ Tu corazón sabe encontrar la luz.",
+    "🌸 Reconocer lo bueno es un acto de amor propio.",
+  ],
+  consuelo: [
+    "☕ Tu hogar interior escuchó tus palabras.",
+    "🤗 Qué bonito que te hayas regalado este momento.",
+    "🧣 Mereces toda la ternura que das a los demás.",
+    "💗 Eres digna de tu propio cuidado.",
+    "🕯 Hoy te abrigaste desde adentro.",
+  ],
+  recuerdos: [
+    "🧸 Este recuerdo ya forma parte de tu casita.",
+    "💌 Tu historia contiene muchos momentos valiosos.",
+    "📖 Gracias por honrar lo que has vivido.",
+    "✨ Los recuerdos bonitos son tuyas para siempre.",
+    "🌟 Qué rica es tu historia interior.",
+  ],
+  presente: [
+    "🪞 Conocerte es el viaje más importante.",
+    "💛 Gracias por compartir esto.",
+    "🌱 Cada respuesta es un paso hacia ti misma.",
+    "✨ Lo que acabas de escribir importa.",
+    "🍄 Tu presencia aquí ya es suficiente.",
+  ],
+  heridas: [
+    "💗 Mirar duele, pero también sana.",
+    "🦁 Hace falta valentía para escribir esto.",
+    "🩹 Nombrar el dolor es el primer paso.",
+    "💛 Gracias por no huir de ti misma.",
+    "🌸 Mereces toda la compasión del mundo.",
+  ],
+  energia: [
+    "🌊 Escucharte es un acto de sabiduría.",
+    "🔥 Tu cansancio también merece atención.",
+    "💧 Fluir no es rendirse, es confiar.",
+    "🌿 Bajar el ritmo también es avanzar.",
+    "💛 Gracias por honrar lo que sientes.",
+  ],
+  semillas: [
+    "🌱 Toda gran flor comenzó siendo una semilla.",
+    "🌸 Lo que imaginas también merece espacio.",
+    "🌟 Tus sueños no han desaparecido, solo esperan.",
+    "💛 Gracias por no dejar morir lo que quiere crecer.",
+    "🌿 Cada deseo que nombras cobra un poco más de vida.",
+  ],
+  alma: [
+    "🌙 Gracias por escuchar lo que vive dentro de ti.",
+    "⭐ Tu alma dejó una huella en esta habitación.",
+    "🌌 Volver a casa también es escucharte.",
+    "💛 Tu casita guardó este momento para ti.",
+    "🍄 Hay más profundidad en ti de la que imaginas.",
+  ],
+  sabiduria: [
+    "📖 La experiencia se convierte en sabiduría cuando la observamos.",
+    "🦉 Cada respuesta es una página más de tu invierno.",
+    "✨ Lo que aprendes te pertenece para siempre.",
+    "💛 Tu vida te está enseñando algo valioso.",
+    "🌿 La sabiduría que tienes ya es tuya.",
+  ],
+  honguito: [
+    "🍄 Bienvenida a casa.",
+    "🏡 Aqui siempre hay un lugar para ti.",
+    "☁ Solo existir ya es suficiente.",
+    "💗 Este momento es tuyo.",
+    "🧸 Descansar tambien es crecer.",
+  ],
+};
+
+const VIRTUES = [
+  { key:'autoconocimiento', name:'🪞 Autoconocimiento', color:'#9b59b6' },
+  { key:'valentía', name:'🦁 Valentía', color:'#e74c3c' },
+  { key:'escucha', name:'🌊 Escucha Interior', color:'#3498db' },
+  { key:'esperanza', name:'🌟 Esperanza', color:'#2ecc71' },
+  { key:'profundidad', name:'🌙 Profundidad', color:'#34495e' },
+  { key:'sabiduría', name:'📚 Sabiduría', color:'#f39c12' },
+  { key:'apreciación', name:'🌞 Apreciación', color:'#f1c40f' },
+  { key:'autocuidado', name:'🤗 Autocuidado', color:'#8e44ad' },
+  { key:'memoria', name:'💌 Memoria', color:'#1abc9c' },
+  { key:'asombro', name:'✨ Asombro', color:'#e67e22' },
+  { key:'amor', name:'💗 Amor Propio', color:'#e8342a' },
+];
+
+const TESORO_CATS_OLD = []; // legacy — replaced by new museum system
+
+// State
+let state = JSON.parse(localStorage.getItem('honguito_state') || 'null') || {
+  snowflakes: 0,
+  virtues: {},
+  visits: {},
+  tesoros: [],
+  tesoros2: [],
+  logros: [],
+  usedQuestions: {},
+  answers: {},
+  badges: {},
+  lastVisit: null,
+};
+
+// Migrate old state if needed
+if(!state.tesoros2) state.tesoros2 = [];
+if(!state.logros) state.logros = [];
+
+function saveState() {
+  localStorage.setItem('honguito_state', JSON.stringify(state));
+  document.getElementById('snow-number').textContent = state.snowflakes;
+}
+
+function getQuestion(roomId) {
+  const pool = ROOM_QUESTIONS[roomId] || [];
+  if(!pool.length) return '¿Cómo te sientes ahora mismo?';
+  const used = state.usedQuestions[roomId] || [];
+  const remaining = pool
+    .map((q, i) => ({ q, i }))
+    .filter(({ i }) => !used.includes(i));
+  const pickFrom = remaining.length > 0 ? remaining : pool.map((q,i) => ({q,i}));
+  const pick = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+  if (remaining.length > 0) {
+    state.usedQuestions[roomId] = [...used, pick.i];
+    if (state.usedQuestions[roomId].length >= pool.length) {
+      state.usedQuestions[roomId] = [];
+    }
+  }
+  return pool[pick.i];
+}
+
+function checkBadges(roomId) {
+  if(!ROOM_BADGES || !ROOM_BADGES[roomId]) return [];
+  const visits = state.visits[roomId] || 0;
+  const defs = ROOM_BADGES[roomId];
+  const earned = state.badges[roomId] || [];
+  const newlyEarned = [];
+  defs.forEach(b => {
+    if(visits >= b.visits && !earned.includes(b.id)) {
+      earned.push(b.id);
+      newlyEarned.push(b);
+    }
+  });
+  state.badges[roomId] = earned;
+  return newlyEarned;
+}
+
+function getBadgeProgress(roomId) {
+  if(!ROOM_BADGES || !ROOM_BADGES[roomId]) return [];
+  const visits = state.visits[roomId] || 0;
+  const defs = ROOM_BADGES[roomId];
+  const earned = state.badges[roomId] || [];
+  return defs.map(b => ({ ...b, done: earned.includes(b.id), visits, pct: Math.min(100, Math.round(visits / b.visits * 100)) }));
+}
+
+function getRoomProgress(roomId) {
+  const pool = (ROOM_QUESTIONS && ROOM_QUESTIONS[roomId]) || [];
+  const answered = (state.answers[roomId] || []).length;
+  return { total: pool.length, answered };
+}
+
+// ═══════════════════════════════
+//  THREE.JS SCENE
+// ═══════════════════════════════
+let scene, camera, renderer, roomMeshes = [], snowParticles, clock;
+let mouseX = 0, mouseY = 0;
+let hovered = null;
+
+// ═══════════════════════════════════════════════
+//  TIME OF DAY — Perú (UTC-5)
+// ═══════════════════════════════════════════════
+const TIME_THEMES = {
+  madrugada: { // 0–5h
+    hour: [0,5],
+    bg: 0x1a1040, fog: 0x1a1040, fogDensity: 0.04,
+    ambient: { color: 0x2d1f5e, intensity: 0.7 },
+    sun: { color: 0x4455aa, intensity: 0.3, pos: [2,8,3] },
+    ground: 0xc8d8f0,
+    treeA: 0x1b3a30, treeB: 0x0f2020,
+    bodyBg: '#1a1040',
+    uiText: '#e8d5f5',
+    label: '🌙 Madrugada', icon: '🌙',
+    poem: '"En la madrugada todo está quieto.\nEres tú y el silencio."'
+  },
+  amanecer: { // 5–8h
+    hour: [5,8],
+    bg: 0xffcba4, fog: 0xffcba4, fogDensity: 0.03,
+    ambient: { color: 0xffd6a0, intensity: 1.1 },
+    sun: { color: 0xffb347, intensity: 1.4, pos: [3,5,8] },
+    ground: 0xffe8cc,
+    treeA: 0x3d7a5f, treeB: 0x2d5a40,
+    bodyBg: 'linear-gradient(160deg, #ffe4b5, #ffc8a0)',
+    uiText: '#5c2d0e',
+    label: '🌅 Amanecer', icon: '🌅',
+    poem: '"El sol vuelve a subir.\nComo tú, cada mañana."'
+  },
+  manana: { // 8–12h
+    hour: [8,12],
+    bg: 0xb8e4ff, fog: 0xd0eeff, fogDensity: 0.025,
+    ambient: { color: 0xfff0d0, intensity: 1.3 },
+    sun: { color: 0xfff5cc, intensity: 1.8, pos: [0,20,5] },
+    ground: 0xe8f8ff,
+    treeA: 0x4a9e6f, treeB: 0x357a50,
+    bodyBg: 'linear-gradient(160deg, #ddf0ff, #ffe8f5)',
+    uiText: '#1a4a6e',
+    label: '☀️ Mañana', icon: '☀️',
+    poem: '"Esta mañana existe una vez.\nMírala bien."'
+  },
+  tarde: { // 12–18h
+    hour: [12,18],
+    bg: 0xfde8ff, fog: 0xfde8ff, fogDensity: 0.022,
+    ambient: { color: 0xfff5cc, intensity: 1.2 },
+    sun: { color: 0xffee88, intensity: 1.5, pos: [8,18,-3] },
+    ground: 0xfff0dd,
+    treeA: 0x52aa72, treeB: 0x3d8050,
+    bodyBg: 'linear-gradient(160deg, #fce4ec, #e8d5f5)',
+    uiText: '#5c2d6e',
+    label: '🌸 Tarde', icon: '🌸',
+    poem: '"La tarde invernal es la más honesta.\nSu luz dice: ya casi."'
+  },
+  atardecer: { // 18–20h
+    hour: [18,20],
+    bg: 0xff9966, fog: 0xffaa77, fogDensity: 0.035,
+    ambient: { color: 0xffaa55, intensity: 0.9 },
+    sun: { color: 0xff7733, intensity: 1.2, pos: [-8,4,6] },
+    ground: 0xffd5b0,
+    treeA: 0x2d5040, treeB: 0x1e3530,
+    bodyBg: 'linear-gradient(160deg, #ffd4a0, #ffb5c0)',
+    uiText: '#5c1a0e',
+    label: '🌇 Atardecer', icon: '🌇',
+    poem: '"El cielo se despide con color.\nEso también lo aprendes del invierno."'
+  },
+  noche: { // 20–24h
+    hour: [20,24],
+    bg: 0x2d1b69, fog: 0x2d1b69, fogDensity: 0.04,
+    ambient: { color: 0x3d2080, intensity: 0.6 },
+    sun: { color: 0x7799cc, intensity: 0.4, pos: [2,12,3] },
+    ground: 0xc0cce8,
+    treeA: 0x1d4030, treeB: 0x0f2820,
+    bodyBg: 'linear-gradient(160deg, #2d1b69, #4a1042)',
+    uiText: '#e8d5f5',
+    label: '✨ Noche', icon: '✨',
+    poem: '"La noche invernal no asusta.\nEs solo el mundo cerrando los ojos."'
+  }
+};
+
+function getPeruHour() {
+  const now = new Date();
+  // Perú = UTC-5
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const peru = new Date(utc - 5 * 3600000);
+  return peru.getHours() + peru.getMinutes() / 60;
+}
+
+function getCurrentTheme() {
+  const h = getPeruHour();
+  for(const [key, t] of Object.entries(TIME_THEMES)) {
+    const [a, b] = t.hour;
+    if(h >= a && h < b) return { key, ...t };
+  }
+  return { key: 'madrugada', ...TIME_THEMES.madrugada };
+}
+
+let ambientLight, sunLight, currentTheme;
+
+function initThree() {
+  const theme = getCurrentTheme();
+  currentTheme = theme;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(theme.bg);
+  scene.fog = new THREE.FogExp2(theme.fog, theme.fogDensity);
+
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.set(0, 4, 13);
+  camera.lookAt(0, 0, 0);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.3;
+  document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+  clock = new THREE.Clock();
+
+  // Lighting — driven by time of day
+  ambientLight = new THREE.AmbientLight(theme.ambient.color, theme.ambient.intensity);
+  scene.add(ambientLight);
+
+  sunLight = new THREE.DirectionalLight(theme.sun.color, theme.sun.intensity);
+  sunLight.position.set(...theme.sun.pos);
+  sunLight.castShadow = true;
+  scene.add(sunLight);
+
+  const warmLight = new THREE.PointLight(0xffd6a0, 2.0, 8);
+  warmLight.position.set(0, 2, 0);
+  scene.add(warmLight);
+
+  // Apply body background
+  applyTheme(theme);
+
+  buildScene(theme);
+  buildSnow();
+
+  window.addEventListener('resize', onResize);
+  window.addEventListener('mousemove', onMouseMove);
+  renderer.domElement.addEventListener('click', onCanvasClick);
+  renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: true });
+  renderer.domElement.addEventListener('touchend',   onTouchEnd,   { passive: true });
+
+  // Update theme every minute
+  setInterval(() => {
+    const newTheme = getCurrentTheme();
+    if(newTheme.key !== currentTheme.key) {
+      currentTheme = newTheme;
+      applyTheme(newTheme);
+      scene.background = new THREE.Color(newTheme.bg);
+      scene.fog = new THREE.FogExp2(newTheme.fog, newTheme.fogDensity);
+      ambientLight.color.set(newTheme.ambient.color);
+      ambientLight.intensity = newTheme.ambient.intensity;
+      sunLight.color.set(newTheme.sun.color);
+      sunLight.intensity = newTheme.sun.intensity;
+      sunLight.position.set(...newTheme.sun.pos);
+    }
+  }, 60000);
+
+  animate();
+}
+
+function applyTheme(theme) {
+  // Body background
+  if(theme.bodyBg.startsWith('linear')) {
+    document.body.style.background = theme.bodyBg;
+  } else {
+    document.body.style.background = '#' + theme.bg.toString(16).padStart(6,'0');
+  }
+  // UI text color
+  document.getElementById('logo').style.color = theme.uiText;
+  document.getElementById('snow-count').style.color = theme.uiText;
+}
+
+function buildScene(theme) {
+  theme = theme || getCurrentTheme();
+  // Ground — snowy field
+  const groundGeo = new THREE.CircleGeometry(22, 64);
+  const groundMat = new THREE.MeshLambertMaterial({ color: theme.ground });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI/2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // Snow bumps
+  for(let i=0; i<30; i++) {
+    const r = 3 + Math.random()*16;
+    const a = Math.random()*Math.PI*2;
+    const sg = new THREE.SphereGeometry(0.2+Math.random()*0.5, 8, 6);
+    const sm = new THREE.MeshLambertMaterial({ color: theme.ground });
+    const s = new THREE.Mesh(sg, sm);
+    s.position.set(Math.cos(a)*r, 0.1, Math.sin(a)*r);
+    s.scale.y = 0.4;
+    scene.add(s);
+  }
+
+  // Trees (pine-style)
+  const treePositions = [
+    [-8,-0.5,-5],[-9,0,-2],[-10,-0.5,2],[-7,0,5],[-11,-0.5,0],
+    [8,-0.5,-5],[9,0,-2],[10,-0.5,2],[7,0,5],[11,-0.5,0],
+    [-5,-0.5,-9],[0,0,-11],[5,-0.5,-9],[3,0,-10],[-3,-0.5,-10],
+  ];
+  treePositions.forEach(([x,y,z]) => buildTree(x,y,z,theme));
+
+  // Central BIG mushroom (Honguito Rojo)
+  buildBigMushroom();
+
+  // Room mushrooms around
+  ROOMS.filter(r => r.id !== 'honguito').forEach((room, i) => {
+    const total = ROOMS.length - 1;
+    const angle = (i / total) * Math.PI * 2 - Math.PI/2;
+    const radius = 5.5;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    buildRoomMushroom(room, x, 0, z);
+  });
+}
+
+function buildTree(x, y, z, theme) {
+  theme = theme || getCurrentTheme();
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  const tg = new THREE.CylinderGeometry(0.1, 0.15, 1.2, 8);
+  const tm = new THREE.MeshLambertMaterial({ color: 0x6b4226 });
+  const trunk = new THREE.Mesh(tg, tm);
+  trunk.position.y = 0.6;
+  trunk.castShadow = true;
+  group.add(trunk);
+
+  const layers = 3;
+  for(let i=0; i<layers; i++) {
+    const scale = 1 - i*0.25;
+    const pg = new THREE.ConeGeometry(0.8*scale, 1.2, 7);
+    const pm = new THREE.MeshLambertMaterial({
+      color: i%2===0 ? theme.treeA : theme.treeB
+    });
+    const pine = new THREE.Mesh(pg, pm);
+    pine.position.y = 1.0 + i*0.7;
+    pine.castShadow = true;
+    group.add(pine);
+
+    if(i === layers-1) {
+      const sg = new THREE.ConeGeometry(0.4*scale, 0.3, 7);
+      const sm = new THREE.MeshLambertMaterial({ color: theme.ground });
+      const snow = new THREE.Mesh(sg, sm);
+      snow.position.y = pine.position.y + 0.7;
+      group.add(snow);
+    }
+  }
+
+  const s = 0.6 + Math.random()*0.8;
+  group.scale.set(s,s,s);
+  group.rotation.y = Math.random()*Math.PI*2;
+  scene.add(group);
+}
+
+function buildBigMushroom() {
+  const group = new THREE.Group();
+  group.position.set(0, 0, 0);
+  group.userData = { id:'honguito', room:ROOMS.find(r=>r.id==='honguito'), isRoom:true };
+
+  // Stem
+  const stemGeo = new THREE.CylinderGeometry(0.45, 0.6, 1.8, 16);
+  const stemMat = new THREE.MeshLambertMaterial({ color: 0xfff5e6 });
+  const stem = new THREE.Mesh(stemGeo, stemMat);
+  stem.position.y = 0.9;
+  stem.castShadow = true;
+  group.add(stem);
+
+  // Cap
+  const capGeo = new THREE.SphereGeometry(1.8, 32, 16, 0, Math.PI*2, 0, Math.PI*0.55);
+  const capMat = new THREE.MeshLambertMaterial({ color: 0xE8342A });
+  const cap = new THREE.Mesh(capGeo, capMat);
+  cap.position.y = 1.9;
+  cap.castShadow = true;
+  group.add(cap);
+
+  // White spots on cap
+  const spotPositions = [
+    [0,0.3,1.5],[1.2,0.8,0.8],[-1.1,0.9,0.9],[0.5,1.6,0.5],[-0.5,1.7,0.4],
+    [1.0,-0.2,1.1],[-0.9,-0.1,1.2]
+  ];
+  spotPositions.forEach(([sx,sy,sz]) => {
+    const sg = new THREE.SphereGeometry(0.18+Math.random()*0.1, 10, 8);
+    const sm = new THREE.MeshLambertMaterial({ color:0xfffde7 });
+    const spot = new THREE.Mesh(sg, sm);
+    const vec = new THREE.Vector3(sx,sy,sz).normalize().multiplyScalar(1.82);
+    spot.position.copy(vec);
+    spot.position.y += 1.9;
+    group.add(spot);
+  });
+
+  // Window (glowing)
+  const winGeo = new THREE.CircleGeometry(0.22, 16);
+  const winMat = new THREE.MeshBasicMaterial({ color: 0xffeb80 });
+  const win = new THREE.Mesh(winGeo, winMat);
+  win.position.set(0.3, 1.1, 0.58);
+  win.rotation.y = -0.5;
+  group.add(win);
+
+  // Door
+  const doorGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.55, 16, 1, false, -Math.PI/2, Math.PI);
+  const doorMat = new THREE.MeshLambertMaterial({ color:0x7c3d12 });
+  const door = new THREE.Mesh(doorGeo, doorMat);
+  door.position.set(0, 0.28, 0.6);
+  door.rotation.z = Math.PI/2;
+  group.add(door);
+
+  // Glow light inside
+  const glow = new THREE.PointLight(0xffd6a0, 1.5, 3);
+  glow.position.set(0, 1.5, 0.5);
+  group.add(glow);
+
+  // Name tag
+  group.userData.glowLight = glow;
+  roomMeshes.push(group);
+  scene.add(group);
+}
+
+function buildRoomMushroom(room, x, y, z) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.userData = { id: room.id, room: room, isRoom: true };
+
+  const scale = 0.55 + Math.random()*0.15;
+
+  // Stem
+  const stemGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.9, 12);
+  const stemMat = new THREE.MeshLambertMaterial({ color: 0xfff5e6 });
+  const stem = new THREE.Mesh(stemGeo, stemMat);
+  stem.position.y = 0.45;
+  stem.castShadow = true;
+  group.add(stem);
+
+  // Cap
+  const capGeo = new THREE.SphereGeometry(0.72, 24, 12, 0, Math.PI*2, 0, Math.PI*0.55);
+  const capMat = new THREE.MeshLambertMaterial({ color: room.color });
+  const cap = new THREE.Mesh(capGeo, capMat);
+  cap.position.y = 0.85;
+  cap.castShadow = true;
+  group.add(cap);
+
+  // Spots
+  for(let i=0; i<3; i++) {
+    const a = (i/3)*Math.PI*2 + Math.random()*0.5;
+    const sg = new THREE.SphereGeometry(0.07, 8, 6);
+    const sm = new THREE.MeshLambertMaterial({ color:0xfffde7, transparent:true, opacity:0.85 });
+    const spot = new THREE.Mesh(sg, sm);
+    const vec = new THREE.Vector3(Math.cos(a)*0.5, 0.3+i*0.1, Math.sin(a)*0.5).normalize().multiplyScalar(0.71);
+    spot.position.copy(vec);
+    spot.position.y += 0.85;
+    group.add(spot);
+  }
+
+  // Small glow
+  const glow = new THREE.PointLight(room.color, 0.8, 2);
+  glow.position.set(0, 1, 0);
+  group.add(glow);
+
+  group.scale.set(scale, scale, scale);
+  group.lookAt(0, 0, 0);
+
+  // Floating icon above (as simple sprite-like plane)
+  group.userData.glowLight = glow;
+  roomMeshes.push(group);
+  scene.add(group);
+}
+
+function buildSnow() {
+  const geo = new THREE.BufferGeometry();
+  const count = 400;
+  const positions = new Float32Array(count * 3);
+  const velocities = [];
+
+  for(let i=0; i<count; i++) {
+    positions[i*3] = (Math.random()-0.5)*40;
+    positions[i*3+1] = Math.random()*20;
+    positions[i*3+2] = (Math.random()-0.5)*40;
+    velocities.push({
+      x: (Math.random()-0.5)*0.01,
+      y: -(0.01+Math.random()*0.02),
+      z: (Math.random()-0.5)*0.01,
+    });
+  }
+
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const mat = new THREE.PointsMaterial({
+    color: 0xddeeff,
+    size: 0.12,
+    transparent: true,
+    opacity: 0.8,
+    sizeAttenuation: true,
+  });
+
+  snowParticles = new THREE.Points(geo, mat);
+  snowParticles.userData.velocities = velocities;
+  scene.add(snowParticles);
+}
+
+// ═══════════════════════════════
+//  ANIMATION
+// ═══════════════════════════════
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  // Camera gentle sway
+  camera.position.x += (mouseX * 1.5 - camera.position.x) * 0.02;
+  camera.position.y += (mouseY * 0.8 + 4 - camera.position.y) * 0.02;
+  camera.lookAt(0, 0.5, 0);
+
+  // Big honguito breathing
+  const main = roomMeshes.find(m => m.userData.id === 'honguito');
+  if(main) {
+    main.scale.set(
+      1 + Math.sin(t*1.2)*0.018,
+      1 + Math.sin(t*1.2)*0.015,
+      1 + Math.sin(t*1.2)*0.018
+    );
+    main.userData.glowLight.intensity = 1.5 + Math.sin(t*2)*0.3;
+  }
+
+  // Small mushrooms gentle float
+  roomMeshes.forEach((m, i) => {
+    if(m.userData.id === 'honguito') return;
+    m.position.y = Math.sin(t*0.8 + i*0.7)*0.08;
+    m.userData.glowLight.intensity = 0.6 + Math.sin(t*1.5 + i)*0.2;
+  });
+
+  // Snow
+  if(snowParticles) {
+    const pos = snowParticles.geometry.attributes.position.array;
+    const vel = snowParticles.userData.velocities;
+    for(let i=0; i<vel.length; i++) {
+      pos[i*3] += vel[i].x + Math.sin(t*0.5+i)*0.002;
+      pos[i*3+1] += vel[i].y;
+      pos[i*3+2] += vel[i].z;
+      if(pos[i*3+1] < -1) {
+        pos[i*3] = (Math.random()-0.5)*40;
+        pos[i*3+1] = 20;
+        pos[i*3+2] = (Math.random()-0.5)*40;
+      }
+    }
+    snowParticles.geometry.attributes.position.needsUpdate = true;
+  }
+
+  // Hover detection
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(roomMeshes, true);
+  let newHovered = null;
+  if(hits.length > 0) {
+    let obj = hits[0].object;
+    while(obj.parent && !obj.userData.isRoom) obj = obj.parent;
+    if(obj.userData.isRoom) newHovered = obj;
+  }
+
+  if(newHovered !== hovered) {
+    hovered = newHovered;
+    const tooltip = document.getElementById('room-tooltip');
+    if(hovered) {
+      tooltip.textContent = hovered.userData.room.icon + ' ' + hovered.userData.room.name;
+      tooltip.classList.add('show');
+      document.body.style.cursor = 'pointer';
+    } else {
+      tooltip.classList.remove('show');
+      document.body.style.cursor = 'default';
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+
+function onMouseMove(e) {
+  mouseX = (e.clientX/window.innerWidth - 0.5)*2;
+  mouseY = -(e.clientY/window.innerHeight - 0.5)*2;
+  mouse.x = (e.clientX/window.innerWidth)*2 - 1;
+  mouse.y = -(e.clientY/window.innerHeight)*2 + 1;
+}
+
+function onCanvasClick(e) {
+  if(document.getElementById('welcome-screen').classList.contains('hidden')) {
+    if(hovered) openRoom(hovered.userData.id);
+  }
+}
+
+function getCanvasPos(e) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: ((clientX - rect.left) / rect.width)  *  2 - 1,
+    y: ((clientY - rect.top)  / rect.height) * -2 + 1,
+  };
+}
+
+function pickRoomAtPos(nx, ny) {
+  const pickMouse = new THREE.Vector2(nx, ny);
+  const pickRay = new THREE.Raycaster();
+  pickRay.setFromCamera(pickMouse, camera);
+  const hits = pickRay.intersectObjects(roomMeshes, true);
+  if(!hits.length) return null;
+  let obj = hits[0].object;
+  while(obj.parent && !obj.userData.isRoom) obj = obj.parent;
+  return obj.userData.isRoom ? obj : null;
+}
+
+let touchStartPos = null;
+
+function onTouchStart(e) {
+  const pos = getCanvasPos(e);
+  touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  // Update mouse for raycaster so hover tooltip shows
+  mouse.x = pos.x;
+  mouse.y = pos.y;
+}
+
+function onTouchEnd(e) {
+  if(!touchStartPos) return;
+  const endX = e.changedTouches[0].clientX;
+  const endY = e.changedTouches[0].clientY;
+  const dx = Math.abs(endX - touchStartPos.x);
+  const dy = Math.abs(endY - touchStartPos.y);
+  // Only treat as tap if finger barely moved (not a scroll)
+  if(dx < 12 && dy < 12) {
+    const pos = getCanvasPos({ clientX: endX, clientY: endY });
+    const hit = pickRoomAtPos(pos.x, pos.y);
+    if(hit && document.getElementById('welcome-screen').classList.contains('hidden')) {
+      openRoom(hit.userData.id);
+    }
+  }
+  touchStartPos = null;
+}
+
+function onResize() {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// ═══════════════════════════════
+//  UI LOGIC
+// ═══════════════════════════════
+function enterApp() {
+  const ws = document.getElementById('welcome-screen');
+  ws.classList.add('hidden');
+  saveState();
+}
+
+function openRoom(id) {
+  const room = ROOMS.find(r => r.id === id);
+  if(!room) return;
+
+  const modal = document.getElementById('room-modal');
+  const card = document.getElementById('modal-card-content');
+
+  if(id === 'honguito') {
+    card.innerHTML = buildHonguitoModal(room);
+  } else {
+    const question = getQuestion(id);
+    card.innerHTML = buildQuestionModal(room, question);
+  }
+
+  modal.classList.add('open');
+}
+
+function buildQuestionModal(room, question) {
+  const visits = state.visits[room.id] || 0;
+  const pool = ROOM_QUESTIONS[room.id] || [];
+  const answered = (state.answers[room.id] || []).length;
+  const progressPct = pool.length ? Math.round(answered / pool.length * 100) : 0;
+  const badges = getBadgeProgress(room.id);
+  const nextBadge = badges.find(b => !b.done);
+  const history = (state.answers[room.id] || []).slice(-3).reverse();
+
+  // Store current question safely so submitRoom can read it without escaping issues
+  window._currentQuestion = question;
+  window._currentRoomId   = room.id;
+  window._currentVirtueKey= room.virtueKey;
+  window._currentReward   = room.reward;
+
+  const badgeHTML = badges.map(b => `
+    <span class="badge-chip ${b.done ? 'done' : 'pending'}" title="${b.name}">
+      ${b.icon} <span class="badge-chip-name">${b.name}</span>
+    </span>`).join('');
+
+  const nextBadgeHTML = nextBadge ? `
+    <div class="next-badge-hint">
+      Próxima insignia: ${nextBadge.icon} <strong>${nextBadge.name}</strong>
+      — faltan ${Math.max(0, nextBadge.visits - visits)} visitas
+    </div>` : `<div class="next-badge-hint">🎉 ¡Todas las insignias desbloqueadas!</div>`;
+
+  const historyHTML = history.length ? `
+    <div class="modal-history">
+      <div class="modal-history-title">📖 Mis últimas respuestas</div>
+      ${history.map(h => `
+        <div class="history-item">
+          <div class="history-date">${h.date}</div>
+          <div class="history-q">"${h.q}"</div>
+          <div class="history-a">${h.text}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  return `
+    <button class="modal-close" onclick="closeRoom()">✕</button>
+    <div class="modal-room-icon">${room.icon}</div>
+    <div class="modal-room-name">${room.name}</div>
+    <div class="modal-virtue">${room.virtue}</div>
+
+    <div class="room-progress-wrap">
+      <div class="room-progress-label">
+        <span>Preguntas respondidas</span>
+        <span>${answered} / ${pool.length}</span>
+      </div>
+      <div class="room-progress-bar">
+        <div class="room-progress-fill" style="width:${progressPct}%"></div>
+      </div>
+    </div>
+
+    <div class="modal-question-box">
+      <div class="modal-question-label">Pregunta de hoy ✨</div>
+      <div class="modal-question-text">"${question}"</div>
+    </div>
+
+    <textarea class="modal-textarea" placeholder="Escribe lo que sientas... no hay respuesta correcta 🍄" rows="4" id="room-answer"></textarea>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeRoom()">Solo leer</button>
+      <button class="btn-primary" id="save-btn" onclick="submitCurrentRoom()">
+        Guardar en mi hogar ❄️
+      </button>
+    </div>
+
+    <div class="modal-badges">${badgeHTML}</div>
+    ${nextBadgeHTML}
+    ${historyHTML}
+  `;
+}
+
+// Lee los globals seguros en lugar de parámetros inline con caracteres especiales
+function submitCurrentRoom() {
+  submitRoom(
+    window._currentRoomId,
+    window._currentVirtueKey,
+    window._currentReward,
+    window._currentQuestion
+  );
+}
+
+function buildHonguitoModal(room) {
+  window._currentRoomId    = 'honguito';
+  window._currentVirtueKey = 'amor';
+  window._currentReward    = room.reward;
+  window._currentQuestion  = null;
+
+  const visits = state.visits['honguito'] || 0;
+  const badges = getBadgeProgress('honguito');
+  const nextBadge = badges.find(b => !b.done);
+  const badgeHTML = badges.map(b => `
+    <span class="badge-chip ${b.done ? 'done' : 'pending'}" title="${b.name}">
+      ${b.icon} <span class="badge-chip-name">${b.name}</span>
+    </span>`).join('');
+
+  return `
+    <button class="modal-close" onclick="closeRoom()">✕</button>
+    <div class="modal-room-icon">🍄</div>
+    <div class="modal-room-name">Honguito Rojo</div>
+    <div class="modal-virtue">${room.virtue}</div>
+    <div class="modal-question-box">
+      <div class="modal-question-label">Tu refugio 🏡</div>
+      <div class="modal-question-text">"No tengo que hacer nada aquí. Solo estar."</div>
+    </div>
+    <div class="honguito-options" id="honguito-opts">
+      <button class="honguito-opt-btn" onclick="selectOpt(this)"><span class="opt-icon">📖</span>Estoy leyendo</button>
+      <button class="honguito-opt-btn" onclick="selectOpt(this)"><span class="opt-icon">☕</span>Descansando</button>
+      <button class="honguito-opt-btn" onclick="selectOpt(this)"><span class="opt-icon">🎵</span>Escuchando música</button>
+      <button class="honguito-opt-btn" onclick="selectOpt(this)"><span class="opt-icon">😂</span>Viendo algo gracioso</button>
+      <button class="honguito-opt-btn" onclick="selectOpt(this)"><span class="opt-icon">🌧</span>Solo quiero estar</button>
+      <button class="honguito-opt-btn" onclick="selectOpt(this)"><span class="opt-icon">😴</span>Necesito pausa</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeRoom()">Volver al bosque</button>
+      <button class="btn-primary" onclick="submitCurrentRoom()">
+        Estar aquí ❄️ +${room.reward}
+      </button>
+    </div>
+    <div class="modal-badges">${badgeHTML}</div>
+    ${nextBadge ? `<div class="next-badge-hint">Próxima: ${nextBadge.icon} ${nextBadge.name} — ${Math.max(0,nextBadge.visits-visits)} visitas más</div>` : '<div class="next-badge-hint">🎉 ¡Todas las insignias desbloqueadas!</div>'}
+    <div class="modal-reward">No tienes que hacer nada. Una visita es suficiente 💗</div>
+  `;
+}
+
+function selectOpt(btn) {
+  document.querySelectorAll('.honguito-opt-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function submitRoom(roomId, virtueKey, reward, question) {
+  const answerEl = document.getElementById('room-answer');
+  const answerText = answerEl ? answerEl.value.trim() : '';
+
+  if(question && answerText) {
+    if(!state.answers[roomId]) state.answers[roomId] = [];
+    const today = new Date().toLocaleDateString('es-PE', { day:'numeric', month:'long', year:'numeric' });
+    state.answers[roomId].push({ q: question, text: answerText, date: today });
+  }
+
+  state.snowflakes += reward;
+  if(!state.virtues[virtueKey]) state.virtues[virtueKey] = 0;
+  state.virtues[virtueKey] = Math.min(100, state.virtues[virtueKey] + Math.floor(Math.random()*4)+3);
+
+  if(!state.visits[roomId]) state.visits[roomId] = 0;
+  state.visits[roomId]++;
+
+  const newBadges = checkBadges(roomId);
+  saveState();
+  closeRoom();
+
+  // Snowflake animation
+  spawnSnowflakes(reward);
+
+  // Warm message first
+  const msgs = WARM_MESSAGES[roomId] || WARM_MESSAGES.honguito;
+  const warmMsg = msgs[Math.floor(Math.random() * msgs.length)];
+  showToast(warmMsg, 2800);
+
+  // Badge toasts after
+  if(newBadges.length) {
+    newBadges.forEach((b, i) =>
+      setTimeout(() => showToast(`${b.icon} ¡Insignia desbloqueada! ${b.name}`, 2400), 3200 + i * 2600)
+    );
+  }
+
+  // Copitos toast last
+  setTimeout(() => showToast(`+${reward} ❄️ copitos ganados`), newBadges.length ? 6000 : 3200);
+}
+
+// Snowflake floating animation
+function spawnSnowflakes(count) {
+  const counter = document.getElementById('snow-count');
+  if(!counter) return;
+  const rect = counter.getBoundingClientRect();
+  const n = Math.min(count, 12);
+  for(let i = 0; i < n; i++) {
+    setTimeout(() => {
+      const flake = document.createElement('div');
+      flake.textContent = '❄️';
+      flake.style.cssText = `
+        position:fixed;
+        font-size:18px;
+        pointer-events:none;
+        z-index:9999;
+        left:${window.innerWidth/2 + (Math.random()-0.5)*60}px;
+        top:${window.innerHeight/2}px;
+        transition: all 1.2s ease-out;
+        opacity:1;
+      `;
+      document.body.appendChild(flake);
+      requestAnimationFrame(() => {
+        flake.style.left = rect.left + rect.width/2 + 'px';
+        flake.style.top  = rect.top + rect.height/2 + 'px';
+        flake.style.opacity = '0';
+        flake.style.transform = 'scale(0.3)';
+      });
+      setTimeout(() => flake.remove(), 1300);
+    }, i * 80);
+  }
+}
+
+function closeRoom() {
+  document.getElementById('room-modal').classList.remove('open');
+}
+
+function showVirtues() {
+  const list = document.getElementById('virtues-list');
+  list.innerHTML = VIRTUES.map(v => {
+    const pct = state.virtues[v.key] || 0;
+    const lvl = Math.floor(pct / 10) + 1;
+    return `
+      <div class="virtue-item">
+        <div class="virtue-header">
+          <div class="virtue-name">${v.name}</div>
+          <div class="virtue-level">Nivel ${lvl}</div>
+        </div>
+        <div class="virtue-bar-bg">
+          <div class="virtue-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${v.color},${v.color}99)"></div>
+        </div>
+        <div class="virtue-pct">${pct}%</div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('virtues-panel').classList.add('open');
+}
+
+function closeVirtues() {
+  document.getElementById('virtues-panel').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════
+//  TESOROS — MUSEO INTERIOR
+// ═══════════════════════════════════════════════
+const TESORO_CATS = [
+  { id:'luz',      icon:'☀️', name:'Tesoros de Luz',       items:['Amanecer','Atardecer','Cielo bonito','Luna','Estrellas','Nubes especiales','Arcoiris','Reflejo de luz'] },
+  { id:'natura',   icon:'🌸', name:'Tesoros de Naturaleza', items:['Flor','Mariposa','Insecto curioso','Abeja','Ave','Arbol bonito','Hoja bonita','Brote','Lluvia'] },
+  { id:'consuelo', icon:'☕', name:'Tesoros de Consuelo',   items:['Cafe','Te','Chocolate caliente','Comida reconfortante','Manta','Luz calida','Descanso','Espacio acogedor'] },
+  { id:'humano',   icon:'💌', name:'Tesoros Humanos',       items:['Mensaje bonito','Sonrisa','Ayuda recibida','Acto de carino','Abrazo','Conversacion importante','Gesto inesperado'] },
+  { id:'creativo', icon:'📖', name:'Tesoros Creativos',     items:['Frase inspiradora','Libro','Cancion','Arte','Escena de pelicula','Idea brillante','Escritura'] },
+  { id:'alegre',   icon:'😂', name:'Tesoros Alegres',       items:['Algo que me hizo reir','Situacion absurda','Video divertido','Momento alegre','Risa compartida'] },
+  { id:'hogar',    icon:'🏡', name:'Tesoros del Hogar',     items:['Mi rincon favorito','Mi ritual','Momento tranquilo','Estar en casa','Mi refugio','Mi espacio seguro'] },
+  { id:'regreso',  icon:'🌱', name:'Regresos',              items:['Volvi a escribir','Volvi a leer','Volvi a moverme','Volvi a crear','Volvi a tener ilusion','Volvi a reir','Volvi a sentirme yo'] },
+  { id:'misterio', icon:'🌙', name:'Cosas que no se pueden explicar', items:['Luna que me emociono','Mariposa en el momento justo','Cancion que me atraveso','Silencio especial','Sensacion dificil de describir'] },
+];
+
+const RAREZA_DATA = {
+  comun:      { label:'⚪ Común',      reward:10, color:'#9ca3af' },
+  especial:   { label:'🟢 Especial',   reward:15, color:'#22c55e' },
+  raro:       { label:'🔵 Raro',       reward:25, color:'#3b82f6' },
+  legendario: { label:'🟣 Legendario', reward:50, color:'#a855f7' },
+};
+
+const LOGROS_DEF = [
+  { id:'observadora',  icon:'🦋', name:'Observadora',          desc:'10 tesoros de naturaleza',    catId:'natura',   need:10,  reward:50 },
+  { id:'noche',        icon:'🌙', name:'Amiga de la Noche',    desc:'10 lunas registradas',        item:'Luna',      need:10,  reward:50 },
+  { id:'acogedor',     icon:'☕', name:'Invierno Acogedor',    desc:'25 tesoros de consuelo',      catId:'consuelo', need:25,  reward:75 },
+  { id:'corazon',      icon:'💛', name:'Corazon Atento',       desc:'100 tesoros totales',         total:100,        need:100, reward:150 },
+  { id:'volviendo',    icon:'🌱', name:'Volviendo a Mi',       desc:'5 regresos registrados',      catId:'regreso',  need:5,   reward:80 },
+  { id:'hogarguard',   icon:'🏡', name:'Guardiana del Hogar',  desc:'15 tesoros del hogar',        catId:'hogar',    need:15,  reward:80 },
+  { id:'chispas',      icon:'📖', name:'Coleccionista de Chispas', desc:'20 tesoros creativos',   catId:'creativo', need:20,  reward:75 },
+  { id:'casa_final',   icon:'👑', name:'He Vuelto a Casa',     desc:'10 regresos — el logro mas importante', catId:'regreso', need:10, reward:200 },
+];
+
+let _tcCat = null;
+let _tcItem = null;
+let _tcRareza = 'comun';
+let _currentTesoro = null;
+let _tesorosTab = 'museo'; // museo | logros
+
+function showTesoros() {
+  _tesorosTab = 'museo';
+  renderTesoros();
+  document.getElementById('tesoros-panel').classList.add('open');
+}
+
+function closeTesoros() {
+  document.getElementById('tesoros-panel').classList.remove('open');
+}
+
+function renderTesoros() {
+  const cont = document.getElementById('tesoros-content');
+  const total = (state.tesoros2 || []).length;
+  const legendary = (state.tesoros2 || []).filter(t => t.rareza === 'legendario').length;
+  const cats = TESORO_CATS.map(c => {
+    const count = (state.tesoros2 || []).filter(t => t.catId === c.id).length;
+    return { ...c, count };
+  });
+
+  const tabMuseo = _tesorosTab === 'museo';
+
+  let body = '';
+  if(tabMuseo) {
+    body = cats.map(cat => {
+      const items = (state.tesoros2 || []).filter(t => t.catId === cat.id);
+      const gridHTML = items.length ? `
+        <div class="tesoros-grid">
+          ${items.slice().reverse().map(t => `
+            <div class="tesoro-item" onclick="showTesoroDetail('${t.id}')">
+              ${t.photo ? `<img class="tesoro-item-photo" src="${t.photo}">` : `<span class="tesoro-item-icon">${cat.icon}</span>`}
+              <div class="tesoro-item-name">${t.name || t.item || cat.name}</div>
+              <div class="tesoro-item-date">${t.date}</div>
+              <div class="tesoro-rareza-dot rareza-${t.rareza}"></div>
+            </div>
+          `).join('')}
+        </div>` : '';
+      return `
+        <div class="tesoro-cat-section">
+          <div class="tesoro-cat-header">
+            <div class="tesoro-cat-title">${cat.icon} ${cat.name}</div>
+            <span class="tesoro-cat-count">${cat.count}</span>
+          </div>
+          ${gridHTML}
+          <button class="tesoro-add-btn" onclick="openTeseroCreate('${cat.id}')">
+            + Añadir tesoro
+          </button>
+        </div>`;
+    }).join('');
+  } else {
+    body = renderLogros();
+  }
+
+  cont.innerHTML = `
+    <button class="tesoros-close-btn" onclick="closeTesoros()">✕ Cerrar museo</button>
+    <div class="tesoros-hero">
+      <div class="tesoros-hero-icon">💎</div>
+      <div class="tesoros-hero-title">Mi Museo Interior</div>
+      <div class="tesoros-hero-sub">"Las pequeñas cosas también construyen una vida."</div>
+      <div class="tesoros-stats">
+        <div class="tesoros-stat">
+          <div class="tesoros-stat-num">${total}</div>
+          <div class="tesoros-stat-label">Tesoros</div>
+        </div>
+        <div class="tesoros-stat">
+          <div class="tesoros-stat-num">${legendary}</div>
+          <div class="tesoros-stat-label">Legendarios</div>
+        </div>
+        <div class="tesoros-stat">
+          <div class="tesoros-stat-num">${cats.filter(c=>c.count>0).length}</div>
+          <div class="tesoros-stat-label">Categorias</div>
+        </div>
+      </div>
+    </div>
+    <div class="tesoros-tabs">
+      <button class="tesoros-tab ${tabMuseo?'active':''}" onclick="switchTesorosTab('museo')">🏛 Mi Museo</button>
+      <button class="tesoros-tab ${!tabMuseo?'active':''}" onclick="switchTesorosTab('logros')">🏆 Logros</button>
+    </div>
+    ${body}
+  `;
+}
+
+function switchTesorosTab(tab) {
+  _tesorosTab = tab;
+  renderTesoros();
+}
+
+function renderLogros() {
+  return LOGROS_DEF.map(l => {
+    const progress = getLogroProgress(l);
+    const done = progress >= l.need;
+    const pct = Math.min(100, Math.round(progress / l.need * 100));
+    const earned = (state.logros || []).includes(l.id);
+    return `
+      <div class="logro-item ${earned ? 'done' : ''}">
+        <div class="logro-icon">${l.icon}</div>
+        <div class="logro-info">
+          <div class="logro-name">${l.name}</div>
+          <div class="logro-desc">${l.desc} • +${l.reward} ❄️</div>
+          <div class="logro-bar-bg">
+            <div class="logro-bar-fill" style="width:${pct}%"></div>
+          </div>
+        </div>
+        <div class="logro-pct">${progress}/${l.need}</div>
+      </div>`;
+  }).join('');
+}
+
+function getLogroProgress(l) {
+  const all = state.tesoros2 || [];
+  if(l.total) return all.length;
+  if(l.catId) return all.filter(t => t.catId === l.catId).length;
+  if(l.item)  return all.filter(t => t.item === l.item).length;
+  return 0;
+}
+
+function checkLogros() {
+  if(!state.logros) state.logros = [];
+  const newlyEarned = [];
+  LOGROS_DEF.forEach(l => {
+    if(!state.logros.includes(l.id) && getLogroProgress(l) >= l.need) {
+      state.logros.push(l.id);
+      state.snowflakes += l.reward;
+      newlyEarned.push(l);
+    }
+  });
+  return newlyEarned;
+}
+
+function openTeseroCreate(catId, item) {
+  _tcCat = TESORO_CATS.find(c => c.id === catId);
+  _tcItem = item || null;
+  _tcRareza = 'comun';
+
+  const modal = document.getElementById('tesoro-create-modal');
+  document.getElementById('tc-cat-label').textContent = (_tcCat ? _tcCat.icon + ' ' + _tcCat.name : '');
+  document.getElementById('tc-name').value = item || '';
+  document.getElementById('tc-desc').value = '';
+  document.getElementById('tc-photo-preview').style.display = 'none';
+  document.getElementById('tc-photo-placeholder').style.display = 'flex';
+  document.getElementById('tc-photo-input').value = '';
+  window._tcPhotoData = null;
+  document.querySelectorAll('.tc-rareza-btn').forEach(b => b.classList.toggle('active', b.dataset.rareza === 'comun'));
+  modal.classList.add('open');
+}
+
+function closeTeseroCreate() {
+  document.getElementById('tesoro-create-modal').classList.remove('open');
+}
+
+function selectRareza(btn) {
+  _tcRareza = btn.dataset.rareza;
+  document.querySelectorAll('.tc-rareza-btn').forEach(b => b.classList.toggle('active', b === btn));
+}
+
+function onTcPhotoChange(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    window._tcPhotoData = e.target.result;
+    const img = document.getElementById('tc-photo-preview');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('tc-photo-placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveTesoro() {
+  if(!_tcCat) return;
+  const name = document.getElementById('tc-name').value.trim();
+  const desc = document.getElementById('tc-desc').value.trim();
+  const rareza = _tcRareza;
+  const reward = RAREZA_DATA[rareza].reward;
+  const today = new Date().toLocaleDateString('es-PE', { day:'numeric', month:'long', year:'numeric' });
+  const id = 't_' + Date.now();
+
+  const tesoro = {
+    id, catId: _tcCat.id, item: _tcItem,
+    name: name || _tcItem || _tcCat.name,
+    desc, rareza, date: today,
+    photo: window._tcPhotoData || null,
+    season: 'invierno',
+  };
+
+  if(!state.tesoros2) state.tesoros2 = [];
+  state.tesoros2.push(tesoro);
+
+  state.snowflakes += reward;
+  if(!state.virtues['asombro']) state.virtues['asombro'] = 0;
+  state.virtues['asombro'] = Math.min(100, state.virtues['asombro'] + (rareza === 'legendario' ? 6 : rareza === 'raro' ? 4 : rareza === 'especial' ? 3 : 2));
+
+  const totalNow = state.tesoros2.length;
+  if(!state.badges['tesoros']) state.badges['tesoros'] = [];
+  const tBadges = [
+    { id:'recolectora', n:25,  icon:'🌸', name:'Recolectora de Tesoros' },
+    { id:'exploradora', n:100, icon:'🦋', name:'Exploradora de Maravillas' },
+    { id:'curadora',    n:250, icon:'💎', name:'Curadora del Museo Interior' },
+  ];
+  const newBadges = tBadges.filter(b => totalNow >= b.n && !state.badges['tesoros'].includes(b.id));
+  newBadges.forEach(b => state.badges['tesoros'].push(b.id));
+
+  const newLogros = checkLogros();
+  saveState();
+  closeTeseroCreate();
+  spawnSnowflakes(reward);
+  renderTesoros();
+
+  const rLabel = RAREZA_DATA[rareza].label;
+  showToast(`${rLabel} guardado +${reward} ❄️`, 2600);
+  if(newBadges.length) {
+    newBadges.forEach((b,i) => setTimeout(() => showToast(`${b.icon} ¡Insignia! ${b.name}`, 2400), 3000 + i*2600));
+  }
+  if(newLogros.length) {
+    newLogros.forEach((l,i) => setTimeout(() => showToast(`${l.icon} ¡Logro! ${l.name} +${l.reward} ❄️`, 3000), 3000 + (newBadges.length + i)*2600));
+  }
+
+  // Offer sharing
+  setTimeout(() => openShareModal(tesoro), 600);
+}
+
+// ── SHARE SYSTEM ──
+let _shareCanvas = null;
+let _shareTesoro = null;
+
+function openShareModal(tesoro) {
+  _shareTesoro = tesoro;
+  const modal = document.getElementById('tesoro-share-modal');
+  modal.style.opacity = '1';
+  modal.style.pointerEvents = 'all';
+  // Hide native share if not supported
+  document.getElementById('share-native-btn').style.display =
+    navigator.share ? 'flex' : 'none';
+  drawShareCanvas(tesoro);
+}
+
+function closeShareModal() {
+  const modal = document.getElementById('tesoro-share-modal');
+  modal.style.opacity = '0';
+  modal.style.pointerEvents = 'none';
+}
+
+function drawShareCanvas(tesoro) {
+  const canvas = document.getElementById('share-canvas');
+  const cat = TESORO_CATS.find(c => c.id === tesoro.catId);
+
+  // Instagram 4:5 — 1080 x 1350
+  const W = 1080, H = 1350;
+  canvas.width = W; canvas.height = H;
+  canvas.style.width = '100%'; canvas.style.height = 'auto';
+  const ctx = canvas.getContext('2d');
+
+  // ── Rareza palette ──
+  const RPASTE = {
+    comun:      { pill:'#e2e8f0', text:'#64748b', bar:'#94a3b8' },
+    especial:   { pill:'#dcfce7', text:'#16a34a', bar:'#4ade80' },
+    raro:       { pill:'#dbeafe', text:'#2563eb', bar:'#60a5fa' },
+    legendario: { pill:'#f3e8ff', text:'#7c3aed', bar:'#c084fc' },
+  };
+  const rp = RPASTE[tesoro.rareza] || RPASTE.comun;
+  const rd = RAREZA_DATA[tesoro.rareza];
+
+  // ── Layout constants ──
+  const PAD   = 50;           // outer margin
+  const CW    = W - PAD*2;   // card width
+  const CH    = H - PAD*2;   // card height
+  const CR    = 60;           // card corner radius
+  const CX    = PAD, CY = PAD;
+
+  const PHOTO_H  = Math.round(CH * 0.57);  // photo = 57% of card
+  const TEXT_H   = CH - PHOTO_H;           // text = 43%
+  const TEXT_Y   = CY + PHOTO_H;           // where text block starts
+
+  function render(img) {
+    // 1. Page background — soft gradient
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#fce7f3');
+    bg.addColorStop(0.5, '#fdf4e7');
+    bg.addColorStop(1, '#ede9fe');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+    // Pastel blobs
+    [[W*0.88,H*0.04,280,'#fda4af',0.22],[W*0.08,H*0.9,220,'#c4b5fd',0.18],
+     [W*0.92,H*0.65,180,'#86efac',0.14],[W*0.05,H*0.35,160,'#fde68a',0.16]]
+    .forEach(([x,y,r,c,a])=>{ ctx.save(); ctx.globalAlpha=a; const g=ctx.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,c); g.addColorStop(1,'transparent'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); ctx.restore(); });
+
+    // 2. Card shadow
+    ctx.save();
+    ctx.shadowColor='rgba(180,100,120,0.18)'; ctx.shadowBlur=70; ctx.shadowOffsetY=18;
+    ctx.fillStyle='#ffffff';
+    rrect(ctx,CX,CY,CW,CH,CR); ctx.fill();
+    ctx.restore();
+
+    // 3. Photo clipped to top of card
+    ctx.save();
+    // Clip: only the photo portion (top part of card with top corners rounded)
+    ctx.beginPath();
+    ctx.moveTo(CX+CR, CY);
+    ctx.lineTo(CX+CW-CR, CY);
+    ctx.quadraticCurveTo(CX+CW, CY, CX+CW, CY+CR);
+    ctx.lineTo(CX+CW, CY+PHOTO_H);
+    ctx.lineTo(CX, CY+PHOTO_H);
+    ctx.lineTo(CX, CY+CR);
+    ctx.quadraticCurveTo(CX, CY, CX+CR, CY);
+    ctx.closePath();
+    ctx.clip();
+
+    if(img) {
+      const iw=img.width, ih=img.height;
+      const scale=Math.max(CW/iw, PHOTO_H/ih);
+      const dw=iw*scale, dh=ih*scale;
+      const dx=CX+(CW-dw)/2, dy=CY+(PHOTO_H-dh)/2;
+      ctx.drawImage(img, dx, dy, dw, dh);
+      // bottom fade so text area feels connected
+      const fade=ctx.createLinearGradient(0,CY+PHOTO_H-120,0,CY+PHOTO_H);
+      fade.addColorStop(0,'rgba(255,255,255,0)');
+      fade.addColorStop(1,'rgba(255,255,255,0.35)');
+      ctx.fillStyle=fade; ctx.fillRect(CX, CY+PHOTO_H-120, CW, 120);
+    } else {
+      const pg=ctx.createLinearGradient(CX,CY,CX+CW,CY+PHOTO_H);
+      pg.addColorStop(0,'#fce7f3'); pg.addColorStop(1,'#ede9fe');
+      ctx.fillStyle=pg; ctx.fillRect(CX,CY,CW,PHOTO_H);
+      ctx.font=`${200}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(cat?cat.icon:'💎', CX+CW/2, CY+PHOTO_H/2);
+    }
+    ctx.restore();
+
+    // 4. Rareza pill (on photo, top-left)
+    const PX=CX+32, PY=CY+32, PR=32;
+    const pText = rd.label;
+    ctx.font=`bold 30px sans-serif`;
+    const pW = ctx.measureText(pText).width + 48;
+    const pH = 64;
+    ctx.save();
+    ctx.fillStyle=rp.pill;
+    ctx.shadowColor='rgba(0,0,0,0.1)'; ctx.shadowBlur=10;
+    rrect(ctx,PX,PY,pW,pH,PR); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle=rp.text;
+    ctx.font=`bold 30px sans-serif`;
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(pText, PX+24, PY+pH/2);
+
+    // 5. TEXT BLOCK — inside white card, below photo
+    // White card bottom already there. Now draw text.
+    const TX = CX + 52;      // text left margin
+    const TW = CW - 104;     // text width
+    let ty   = TEXT_Y + 52;  // starting y for first text element
+
+    // 5a. Category + date — small, muted
+    ctx.fillStyle='rgba(120,80,100,0.55)';
+    ctx.font=`500 28px sans-serif`;
+    ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+    const catStr = `${cat?cat.icon+' '+cat.name:'✨'} · ${tesoro.date}`;
+    ctx.fillText(catStr, TX, ty);
+    ty += 72;
+
+    // 5b. Name — large, pastel color (NOT black)
+    const nameColor = {
+      comun:'#db6b8a', especial:'#059669', raro:'#3b5bdb', legendario:'#7c3aed'
+    }[tesoro.rareza] || '#db6b8a';
+
+    ctx.fillStyle = nameColor;
+    ctx.font = `900 74px sans-serif`;
+    const nameLines = getLines(ctx, tesoro.name || '', TW);
+    nameLines.slice(0,2).forEach(line => {
+      ctx.fillText(line, TX, ty);
+      ty += 88;
+    });
+    ty += 8;
+
+    // 5c. Description — italic, dark-muted, with colored left bar
+    if(tesoro.desc) {
+      const descLines = getLines(ctx, `"${tesoro.desc}"`, TW - 40);
+      const maxLines  = Math.min(descLines.length, 3);
+      const barH      = maxLines * 48 + 8;
+
+      // left accent bar
+      ctx.fillStyle = rp.bar;
+      rrect(ctx, TX, ty-4, 7, barH, 4);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(80,40,60,0.58)';
+      ctx.font = `italic 36px sans-serif`;
+      descLines.slice(0, maxLines).forEach(line => {
+        ctx.fillText(line, TX+28, ty);
+        ty += 48;
+      });
+    }
+
+    // 6. Bottom branding strip — inside card, flush bottom
+    const STRIPE_H = 86;
+    const STRIPE_Y = CY + CH - STRIPE_H;
+    ctx.save();
+    rrect(ctx,CX,CY,CW,CH,CR); ctx.clip(); // keep inside card corners
+    const stripGrad = ctx.createLinearGradient(CX,0,CX+CW,0);
+    stripGrad.addColorStop(0,'#fce7f3'); stripGrad.addColorStop(1,'#ede9fe');
+    ctx.fillStyle=stripGrad;
+    ctx.fillRect(CX, STRIPE_Y, CW, STRIPE_H);
+    ctx.fillStyle='rgba(180,60,100,0.7)';
+    ctx.font=`bold 30px sans-serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🍄 Honguito Rojo  ·  Invierno  ❄️', CX+CW/2, STRIPE_Y+STRIPE_H/2);
+    ctx.restore();
+  }
+
+  function getLines(ctx, text, maxW) {
+    const words = text.split(' ');
+    const lines = []; let line = '';
+    for(const word of words) {
+      const test = line ? line+' '+word : word;
+      if(ctx.measureText(test).width > maxW && line) { lines.push(line); line=word; }
+      else line=test;
+    }
+    if(line) lines.push(line);
+    return lines;
+  }
+
+  function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+    ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+
+  // Load photo or render immediately
+  if(tesoro.photo && tesoro.photo !== '📸') {
+    const img = new Image();
+    img.onload  = () => render(img);
+    img.onerror = () => render(null);
+    img.src = tesoro.photo;
+  } else {
+    render(null);
+  }
+}
+function downloadTesoro() {
+  const canvas = document.getElementById('share-canvas');
+  const name = (_shareTesoro ? _shareTesoro.name : 'tesoro').replace(/\s+/g,'-').toLowerCase();
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = `honguito-rojo-${name}.png`;
+  a.click();
+}
+
+async function shareNative() {
+  if(!navigator.share) return;
+  const canvas = document.getElementById('share-canvas');
+  const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+  const file = new File([blob], 'tesoro-honguito-rojo.png', { type: 'image/png' });
+  try {
+    await navigator.share({
+      title: _shareTesoro ? _shareTesoro.name : 'Mi tesoro',
+      text: (_shareTesoro && _shareTesoro.desc) ? _shareTesoro.desc : 'Un momento guardado en Honguito Rojo 🍄❄️',
+      files: [file],
+    });
+  } catch(e) {
+    if(e.name !== 'AbortError') showToast('No se pudo compartir, descarga el PNG');
+  }
+}
+
+document.getElementById('tesoro-share-modal').addEventListener('click', e => {
+  if(e.target === document.getElementById('tesoro-share-modal')) closeShareModal();
+});
+
+function showTesoroDetail(id) {
+  const t = (state.tesoros2 || []).find(x => x.id === id);
+  if(!t) return;
+  window._lastDetailTesoro = t;
+  const cat = TESORO_CATS.find(c => c.id === t.catId);
+  const r = RAREZA_DATA[t.rareza];
+  const modal = document.getElementById('tesoro-detail-modal');
+  document.getElementById('tesoro-detail-content').innerHTML = `
+    <button class="modal-close" onclick="document.getElementById('tesoro-detail-modal').classList.remove('open')" style="position:absolute;top:14px;right:14px">✕</button>
+    ${t.photo ? `<img src="${t.photo}" style="width:100%;height:180px;object-fit:cover;border-radius:16px;margin-bottom:14px">` : `<div style="font-size:52px;text-align:center;margin-bottom:12px">${cat ? cat.icon : '💎'}</div>`}
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:${r.color};margin-bottom:4px">${r.label}</div>
+    <div style="font-size:20px;font-weight:900;color:#3d1a0a;margin-bottom:4px">${t.name}</div>
+    <div style="font-size:13px;color:rgba(61,26,10,0.5);margin-bottom:8px">${cat ? cat.icon + ' ' + cat.name : ''} • ${t.date}</div>
+    ${t.desc ? `<div style="font-size:14px;color:rgba(61,26,10,0.65);font-style:italic;border-left:3px solid rgba(232,52,42,0.3);padding-left:12px;line-height:1.5;margin-bottom:12px">"${t.desc}"</div>` : ''}
+    <div style="font-size:12px;color:rgba(61,26,10,0.35);margin-bottom:16px;text-align:center">🌱 Invierno • Honguito Rojo</div>
+    <button onclick="document.getElementById('tesoro-detail-modal').classList.remove('open');openShareModal(window._lastDetailTesoro)" style="
+      width:100%;background:rgba(232,52,42,0.08);
+      border:1.5px solid rgba(232,52,42,0.2);border-radius:999px;padding:12px;
+      font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;
+      color:#c41f16;cursor:pointer;
+    ">✨ Compartir este tesoro</button>
+  `;
+  modal.classList.add('open');
+}
+
+document.getElementById('tesoro-create-modal').addEventListener('click', e => {
+  if(e.target === document.getElementById('tesoro-create-modal')) closeTeseroCreate();
+});
+document.getElementById('tesoro-detail-modal').addEventListener('click', e => {
+  if(e.target === document.getElementById('tesoro-detail-modal')) document.getElementById('tesoro-detail-modal').classList.remove('open');
+});
+
+function showToast(msg, duration = 2400) {
+  const toast = document.getElementById('toast');
+  if(!toast) return;
+  // If already showing, queue briefly
+  if(toast.classList.contains('show')) {
+    toast.classList.remove('show');
+    setTimeout(() => showToast(msg, duration), 320);
+    return;
+  }
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => { if(toast) toast.classList.remove('show'); }, duration);
+}
+
+// Close on backdrop
+document.getElementById('room-modal').addEventListener('click', e => {
+  if(e.target === document.getElementById('room-modal')) closeRoom();
+});
+document.getElementById('virtues-panel').addEventListener('click', e => {
+  if(e.target === document.getElementById('virtues-panel')) closeVirtues();
+});
+document.getElementById('tesoros-panel').addEventListener('click', e => {
+  if(e.target === document.getElementById('tesoros-panel')) closeTesoros();
+});
+document.getElementById('calor-panel').addEventListener('click', e => {
+  if(e.target === document.getElementById('calor-panel')) closeCalor();
+});
+document.getElementById('sonidos-panel').addEventListener('click', e => {
+  if(e.target === document.getElementById('sonidos-panel')) closeSonidos();
+});
+
+// ═══════════════════════════════════════════════
+//  1. CUENTA REGRESIVA DE LUZ
+// ═══════════════════════════════════════════════
+let luzDetailMode = 0; // 0 = días, 1 = minutos de luz
+
+function getLuzData() {
+  const now = new Date();
+  const year = now.getFullYear();
+  // Solsticio de invierno en Perú (hemisferio sur): 21 de junio
+  const solsticio = new Date(year, 5, 21, 0, 0, 0); // June = mes 5
+  const diffMs = solsticio - now;
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if(diffDays > 0) {
+    // Faltan días para el solsticio
+    const totalDays = 365;
+    const dayOfYear = Math.floor((now - new Date(year, 0, 1)) / (1000*60*60*24));
+    const solsticioDay = 172; // ~21 junio
+    const progress = Math.max(0, Math.min(1, dayOfYear / solsticioDay));
+    return {
+      mode: 'before',
+      days: diffDays,
+      progress,
+      label: 'Solsticio de Invierno',
+      main: `<span class="luz-accent">${diffDays}</span> días`,
+      sub: 'para el corazón del invierno'
+    };
+  } else {
+    // Ya pasó el solsticio — días creciendo
+    const daysPassed = Math.abs(diffDays);
+    // Simulación simple: ~1.2 min de luz ganados por día post-solsticio en Perú
+    const minGanados = Math.round(daysPassed * 1.15);
+    const progress = Math.min(1, daysPassed / 183);
+    return {
+      mode: 'after',
+      days: daysPassed,
+      progress,
+      label: 'Los días crecen',
+      main: `+<span class="luz-accent">${minGanados}</span> min de luz`,
+      sub: `desde el solsticio • día ${daysPassed}`
+    };
+  }
+}
+
+function updateLuzWidget() {
+  const labelEl = document.getElementById('luz-label-top');
+  const mainEl = document.getElementById('luz-main-text');
+  const arcEl = document.getElementById('luz-arc-circle');
+  if(!labelEl || !mainEl) return;
+  const data = getLuzData();
+  labelEl.textContent = data.label;
+  mainEl.innerHTML = data.main;
+  const circ = 82;
+  const offset = circ - (circ * data.progress);
+  if(arcEl) arcEl.style.strokeDashoffset = offset;
+}
+
+let luzCountdownInterval = null;
+
+function openLuzExpanded() {
+  const data = getLuzData();
+  const theme = getCurrentTheme();
+
+  // Icon and mood badge
+  document.getElementById('luz-exp-icon').textContent = data.mode === 'before' ? '❄️' : '🌱';
+  document.getElementById('luz-mood-badge').textContent = theme.label;
+
+  // Title, number, unit
+  if(data.mode === 'before') {
+    document.getElementById('luz-exp-title').textContent = 'DÍAS PARA EL SOLSTICIO';
+    document.getElementById('luz-exp-number').textContent = data.days;
+    document.getElementById('luz-exp-unit').textContent = 'días para el corazón del invierno';
+  } else {
+    document.getElementById('luz-exp-title').textContent = 'DÍAS DESDE EL SOLSTICIO';
+    document.getElementById('luz-exp-number').textContent = '+' + Math.round(data.days * 1.15);
+    document.getElementById('luz-exp-unit').textContent = 'minutos de luz ganados';
+  }
+
+  // Large arc
+  const arcLarge = document.getElementById('luz-exp-arc');
+  if(arcLarge) {
+    const circ = 314;
+    arcLarge.style.strokeDashoffset = circ - (circ * data.progress);
+  }
+
+  // Poem from theme
+  document.getElementById('luz-exp-poem').innerHTML = theme.poem.replace(/\n/g, '<br>');
+
+  // Start live countdown to solsticio
+  if(luzCountdownInterval) clearInterval(luzCountdownInterval);
+  function updateCountdown() {
+    const now = new Date();
+    const year = now.getFullYear();
+    let target = new Date(year, 5, 21, 12, 0, 0); // 21 jun 12:00
+    if(now > target) target = new Date(year + 1, 5, 21, 12, 0, 0);
+    const diff = target - now;
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    const fmt = n => String(n).padStart(2, '0');
+    const dEl = document.getElementById('lcd-d');
+    const hEl = document.getElementById('lcd-h');
+    const mEl = document.getElementById('lcd-m');
+    const sEl = document.getElementById('lcd-s');
+    if(dEl) dEl.textContent = fmt(d);
+    if(hEl) hEl.textContent = fmt(h);
+    if(mEl) mEl.textContent = fmt(m);
+    if(sEl) sEl.textContent = fmt(s);
+  }
+  updateCountdown();
+  luzCountdownInterval = setInterval(updateCountdown, 1000);
+
+  document.getElementById('luz-expanded').classList.add('open');
+}
+
+function closeLuzExpanded() {
+  document.getElementById('luz-expanded').classList.remove('open');
+  if(luzCountdownInterval) { clearInterval(luzCountdownInterval); luzCountdownInterval = null; }
+}
+
+function cycleLuzDetail() {
+  openLuzExpanded();
+}
+
+document.getElementById('luz-expanded').addEventListener('click', e => {
+  if(e.target === document.getElementById('luz-expanded')) closeLuzExpanded();
+});
+
+// ═══════════════════════════════════════════════
+//  2. TERMÓMETRO DE CALIDEZ
+// ═══════════════════════════════════════════════
+const CALOR_LABELS = [
+  [0,  15,  'Frío y quieto 🌨️'],
+  [15, 30,  'Fresco y sereno ❄️'],
+  [30, 45,  'Tibio por dentro 🌿'],
+  [45, 60,  'Tibio y tranquilo ✨'],
+  [60, 75,  'Calientito y acogedor ☕'],
+  [75, 90,  'Muy cálido y seguro 🔥'],
+  [90, 101, 'Arropada en calidez 🍄'],
+];
+
+let calorBadgesState = {};
+let calorSliderValue = 50;
+
+function getCalorLabel(v) {
+  return (CALOR_LABELS.find(([a,b]) => v >= a && v < b) || CALOR_LABELS[3])[2];
+}
+
+function onCalorSlide(v) {
+  calorSliderValue = parseInt(v);
+  document.getElementById('calor-thumb').style.left = v + '%';
+  document.getElementById('calor-value-label').textContent = getCalorLabel(calorSliderValue);
+}
+
+function toggleBadge(btn, key) {
+  calorBadgesState[key] = !calorBadgesState[key];
+  btn.classList.toggle('on', calorBadgesState[key]);
+}
+
+function showCalor() {
+  // Load today's saved data
+  const today = new Date().toISOString().slice(0, 10);
+  const saved = JSON.parse(localStorage.getItem('honguito_calor') || '{}');
+  const todayData = saved[today] || null;
+  if(todayData) {
+    calorSliderValue = todayData.value;
+    calorBadgesState = todayData.badges || {};
+    document.getElementById('calor-slider').value = calorSliderValue;
+    document.getElementById('calor-thumb').style.left = calorSliderValue + '%';
+    document.getElementById('calor-value-label').textContent = getCalorLabel(calorSliderValue);
+    // Restore badges
+    document.querySelectorAll('.calor-badge').forEach(btn => {
+      const key = btn.getAttribute('onclick').match(/'([^']+)'\)/)?.[1];
+      if(key) btn.classList.toggle('on', !!calorBadgesState[key]);
+    });
+  }
+  // Render history
+  renderCalorHistory(saved, today);
+  document.getElementById('calor-panel').classList.add('open');
+}
+
+function closeCalor() {
+  document.getElementById('calor-panel').classList.remove('open');
+}
+
+function saveCalor() {
+  const today = new Date().toISOString().slice(0, 10);
+  const saved = JSON.parse(localStorage.getItem('honguito_calor') || '{}');
+  saved[today] = { value: calorSliderValue, badges: { ...calorBadgesState }, label: getCalorLabel(calorSliderValue) };
+  // Keep only last 7 days
+  const keys = Object.keys(saved).sort().slice(-7);
+  const trimmed = {};
+  keys.forEach(k => { trimmed[k] = saved[k]; });
+  localStorage.setItem('honguito_calor', JSON.stringify(trimmed));
+  renderCalorHistory(trimmed, today);
+  showToast('Calidez del día guardada 🌡️');
+}
+
+function renderCalorHistory(saved, today) {
+  const list = document.getElementById('calor-history-list');
+  const keys = Object.keys(saved).sort().reverse().slice(0, 5);
+  if(!keys.length) { list.innerHTML = '<div style="font-size:12px;color:rgba(255,245,230,0.3);font-style:italic">Aún no hay registros</div>'; return; }
+  list.innerHTML = keys.map(k => {
+    const d = saved[k];
+    const isToday = k === today;
+    const dateLabel = isToday ? 'Hoy' : k.slice(5).replace('-', '/');
+    return `<div class="calor-hist-item">
+      <span style="width:28px;font-size:11px;color:rgba(255,245,230,${isToday?'0.8':'0.4'})">${dateLabel}</span>
+      <div class="calor-hist-bar"><div class="calor-hist-fill" style="width:${d.value}%"></div></div>
+      <span style="font-size:11px;color:rgba(255,245,230,0.45)">${d.value}%</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  3. PAISAJES SONOROS
+// ═══════════════════════════════════════════════
+
+// We use AudioContext + oscillator-based noise generators
+// No external audio URLs needed — all synthesized in-browser
+let audioCtx = null;
+let masterGain = null;
+let canalNodes = [null, null, null, null];
+let canalActive = [false, false, false, false];
+let canalGains = [null, null, null, null];
+let canalVolumes = [0.7, 0.6, 0.55, 0.55];
+let masterVolume = 0.7;
+let sleepTimerId = null;
+let sleepEndsAt = null;
+let sleepCountdownInterval = null;
+
+function ensureAudioCtx() {
+  if(!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = masterVolume;
+    masterGain.connect(audioCtx.destination);
+  }
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// --- Synthesized sounds ---
+
+// Utilidad: crea un nodo de reverb simple con ConvolverNode
+function makeReverb(duration = 2.0, decay = 2.5) {
+  const sr = audioCtx.sampleRate;
+  const len = sr * duration;
+  const buf = audioCtx.createBuffer(2, len, sr);
+  for(let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for(let i = 0; i < len; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+  }
+  const conv = audioCtx.createConvolver();
+  conv.buffer = buf;
+  return conv;
+}
+
+// Utilidad: toca una nota de piano sintética
+// freq: Hz, time: cuando (audioCtx.currentTime + offset), dur: duración en segundos
+function playPianoNote(freq, time, dur, outNode, velocity = 0.18) {
+  // Oscilador principal: sine con algo de harmónico
+  const osc1 = audioCtx.createOscillator();
+  const osc2 = audioCtx.createOscillator();
+  osc1.type = 'triangle';
+  osc2.type = 'sine';
+  osc1.frequency.value = freq;
+  osc2.frequency.value = freq * 2.001; // octava ligeramente desafinada = cuerda de piano
+
+  const env = audioCtx.createGain();
+  env.gain.setValueAtTime(0, time);
+  env.gain.linearRampToValueAtTime(velocity, time + 0.008);       // ataque muy corto
+  env.gain.exponentialRampToValueAtTime(velocity * 0.6, time + 0.1); // decay
+  env.gain.exponentialRampToValueAtTime(0.0001, time + dur);       // release suave
+
+  const g1 = audioCtx.createGain(); g1.gain.value = 0.7;
+  const g2 = audioCtx.createGain(); g2.gain.value = 0.3;
+  osc1.connect(g1); osc2.connect(g2);
+  g1.connect(env); g2.connect(env);
+  env.connect(outNode);
+
+  osc1.start(time); osc2.start(time);
+  osc1.stop(time + dur + 0.1);
+  osc2.stop(time + dur + 0.1);
+}
+
+// Canal 0: Piano minimalista
+// Escala pentatónica de Do mayor, notas lentas con mucho silencio entre ellas
+function createPianoNode() {
+  const reverb = makeReverb(3.0, 3.0);
+  const wetGain = audioCtx.createGain();  wetGain.gain.value = 0.55;
+  const dryGain = audioCtx.createGain();  dryGain.gain.value = 0.45;
+  const out = audioCtx.createGain();      out.gain.value = 1.0;
+
+  reverb.connect(wetGain);
+  wetGain.connect(out);
+  dryGain.connect(out);
+
+  // Pentatónica Do mayor: C4 D4 E4 G4 A4 C5 D5 E5 G5
+  const PENTA = [261.63, 293.66, 329.63, 392.00, 440.00,
+                 523.25, 587.33, 659.25, 783.99];
+
+  let scheduled = false;
+  let stopped = false;
+  const allOscs = [];
+
+  function schedulePhrase() {
+    if(stopped) return;
+    const now = audioCtx.currentTime;
+    // Frase de 4-6 notas elegidas aleatoriamente, con espacios generosos
+    const noteCount = 4 + Math.floor(Math.random() * 3);
+    let t = now + 0.5;
+    for(let n = 0; n < noteCount; n++) {
+      const freq = PENTA[Math.floor(Math.random() * PENTA.length)];
+      const gap = 1.2 + Math.random() * 2.4;   // 1.2–3.6s entre notas
+      const dur = 2.5 + Math.random() * 1.5;   // nota dura 2.5–4s
+      const vel = 0.10 + Math.random() * 0.10; // toque suave y variado
+      playPianoNote(freq, t, dur, dryGain, vel);
+      playPianoNote(freq, t, dur, reverb,  vel * 0.6);
+      t += gap;
+    }
+    // Silencio entre frases: 3–7 segundos
+    const phraseDur = t - now + 3 + Math.random() * 4;
+    setTimeout(schedulePhrase, phraseDur * 1000);
+  }
+
+  schedulePhrase();
+
+  const stub = {
+    _isStub: true,
+    start: () => {},
+    stop: () => { stopped = true; }
+  };
+  return { src: stub, out };
+}
+
+// Utilidad: toca una nota de caja de música (sine muy puro con decay rápido)
+function playBoxNote(freq, time, outNode, velocity = 0.22) {
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+
+  const env = audioCtx.createGain();
+  env.gain.setValueAtTime(velocity, time);
+  env.gain.exponentialRampToValueAtTime(0.0001, time + 1.8); // decay corto y brillante
+
+  osc.connect(env);
+  env.connect(outNode);
+  osc.start(time);
+  osc.stop(time + 1.9);
+}
+
+// Canal 1: Caja de música
+// Melodía simple en Do mayor, tempo muy lento, loop con variaciones
+function createMusicBoxNode() {
+  const reverb = makeReverb(2.5, 4.0);
+  const wetGain = audioCtx.createGain(); wetGain.gain.value = 0.5;
+  const dryGain = audioCtx.createGain(); dryGain.gain.value = 0.5;
+  const out = audioCtx.createGain(); out.gain.value = 1.0;
+  reverb.connect(wetGain);
+  wetGain.connect(out);
+  dryGain.connect(out);
+
+  // Pequeña melodía kawaii en Do mayor (C5 D5 E5 G5 A5)
+  // Dos frases que se alternan
+  const MELODIES = [
+    // Frase 1: suave y descendente
+    [523.25, 493.88, 440.00, 392.00, 329.63, 293.66, 261.63],
+    // Frase 2: ascendente y juguetona
+    [261.63, 329.63, 392.00, 440.00, 523.25, 587.33, 523.25],
+    // Frase 3: solo tres notas, muy minimalista
+    [440.00, 392.00, 329.63],
+  ];
+
+  let stopped = false;
+  let phraseIdx = 0;
+
+  function schedulePhrase() {
+    if(stopped) return;
+    const now = audioCtx.currentTime;
+    const melody = MELODIES[phraseIdx % MELODIES.length];
+    phraseIdx++;
+    let t = now + 0.3;
+    melody.forEach((freq, i) => {
+      const gap = 0.55 + Math.random() * 0.25; // ritmo suave irregular
+      playBoxNote(freq, t, dryGain, 0.18 + Math.random() * 0.08);
+      playBoxNote(freq, t, reverb,  0.10);
+      t += gap;
+    });
+    // Pausa larga entre frases (3–6s), para que respire
+    const total = t - now + 3.0 + Math.random() * 3.0;
+    setTimeout(schedulePhrase, total * 1000);
+  }
+
+  schedulePhrase();
+
+  const stub = { _isStub: true, start: () => {}, stop: () => { stopped = true; } };
+  return { src: stub, out };
+}
+
+// Canal 2: Cuenco tibetano
+// Frecuencia fundamental + armónicos con envolvente larga, entre golpe y golpe silencio
+function createBowlNode() {
+  const reverb = makeReverb(4.5, 1.8);
+  const wetGain = audioCtx.createGain(); wetGain.gain.value = 0.65;
+  const dryGain = audioCtx.createGain(); dryGain.gain.value = 0.35;
+  const out = audioCtx.createGain(); out.gain.value = 1.0;
+  reverb.connect(wetGain); wetGain.connect(out); dryGain.connect(out);
+
+  // Frecuencias de cuencos tibetanos reales (Hz)
+  const BOWLS = [
+    { f: 432, harmonics: [864, 1296] },   // Sol grave — calma
+    { f: 528, harmonics: [1056, 1584] },  // Do — transformación
+    { f: 396, harmonics: [792, 1188] },   // Sol# grave — tierra
+  ];
+
+  let stopped = false;
+  let bowlIdx = 0;
+
+  function strikeBowl() {
+    if(stopped) return;
+    const now = audioCtx.currentTime;
+    const bowl = BOWLS[bowlIdx % BOWLS.length];
+    bowlIdx++;
+
+    // Fundamental
+    const osc0 = audioCtx.createOscillator();
+    osc0.type = 'sine';
+    osc0.frequency.value = bowl.f;
+    const env0 = audioCtx.createGain();
+    env0.gain.setValueAtTime(0, now);
+    env0.gain.linearRampToValueAtTime(0.28, now + 0.02);
+    env0.gain.exponentialRampToValueAtTime(0.0001, now + 6.0); // larga resonancia
+    osc0.connect(env0); env0.connect(dryGain); env0.connect(reverb);
+    osc0.start(now); osc0.stop(now + 6.2);
+
+    // Armónicos más suaves
+    bowl.harmonics.forEach((hf, hi) => {
+      const oscH = audioCtx.createOscillator();
+      oscH.type = 'sine';
+      oscH.frequency.value = hf;
+      const envH = audioCtx.createGain();
+      envH.gain.setValueAtTime(0, now);
+      envH.gain.linearRampToValueAtTime(0.08 / (hi + 1), now + 0.015);
+      envH.gain.exponentialRampToValueAtTime(0.0001, now + 3.5 - hi * 0.8);
+      oscH.connect(envH); envH.connect(reverb);
+      oscH.start(now); oscH.stop(now + 3.8);
+    });
+
+    // Próximo golpe: entre 7 y 14 segundos después
+    const wait = 7000 + Math.random() * 7000;
+    setTimeout(strikeBowl, wait);
+  }
+
+  // Primer golpe ligeramente retrasado para que no suene brusco al activar
+  setTimeout(strikeBowl, 600);
+
+  const stub = { _isStub: true, start: () => {}, stop: () => { stopped = true; } };
+  return { src: stub, out };
+}
+
+// Canal 3: Ronroneo de gato
+// Frecuencia de ronroneo real: 25-50Hz con armónicos y respiración
+function createPurrNode() {
+  const sr = audioCtx.sampleRate;
+
+  // Oscilador base del ronroneo (frecuencia de gato: ~30Hz)
+  const osc1 = audioCtx.createOscillator();
+  osc1.type = 'sawtooth';
+  osc1.frequency.value = 28;
+
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = 'sine';
+  osc2.frequency.value = 32;
+
+  const osc3 = audioCtx.createOscillator();
+  osc3.type = 'sine';
+  osc3.frequency.value = 56;
+
+  const g1 = audioCtx.createGain(); g1.gain.value = 0.15;
+  const g2 = audioCtx.createGain(); g2.gain.value = 0.25;
+  const g3 = audioCtx.createGain(); g3.gain.value = 0.08;
+  osc1.connect(g1); osc2.connect(g2); osc3.connect(g3);
+
+  const mixer = audioCtx.createGain(); mixer.gain.value = 1;
+  g1.connect(mixer); g2.connect(mixer); g3.connect(mixer);
+
+  const breathLfo = audioCtx.createOscillator();
+  breathLfo.frequency.value = 0.38;
+  breathLfo.type = 'sine';
+  const breathGain = audioCtx.createGain(); breathGain.gain.value = 0.3;
+  breathLfo.connect(breathGain);
+
+  const outputGain = audioCtx.createGain(); outputGain.gain.value = 0.65;
+  breathGain.connect(outputGain.gain);
+  mixer.connect(outputGain);
+
+  const vibraLfo = audioCtx.createOscillator();
+  vibraLfo.frequency.value = 26;
+  const vibraGain = audioCtx.createGain(); vibraGain.gain.value = 0.08;
+  vibraLfo.connect(vibraGain);
+  vibraGain.connect(outputGain.gain);
+
+  const warmFilter = audioCtx.createBiquadFilter();
+  warmFilter.type = 'lowpass';
+  warmFilter.frequency.value = 380;
+  warmFilter.Q.value = 2.5;
+  outputGain.connect(warmFilter);
+
+  const delay = audioCtx.createDelay(0.1);
+  delay.delayTime.value = 0.04;
+  const delayGain = audioCtx.createGain(); delayGain.gain.value = 0.2;
+  warmFilter.connect(delay); delay.connect(delayGain);
+
+  const finalMix = audioCtx.createGain(); finalMix.gain.value = 1;
+  warmFilter.connect(finalMix); delayGain.connect(finalMix);
+
+  osc1.start(); osc2.start(); osc3.start();
+  breathLfo.start(); vibraLfo.start();
+
+  const allOscs = [osc1, osc2, osc3, breathLfo, vibraLfo];
+  const stub = {
+    _isStub: true,
+    start: () => {},
+    stop: () => allOscs.forEach(o => { try{ o.stop(); }catch(e){} })
+  };
+  return { src: stub, out: finalMix, extra: allOscs };
+}
+
+const CANAL_CREATORS = [createPianoNode, createMusicBoxNode, createBowlNode, createPurrNode];
+
+function toggleCanal(i) {
+  ensureAudioCtx();
+  if(canalActive[i]) {
+    stopCanal(i);
+  } else {
+    startCanal(i);
+  }
+  updateSonidosUI();
+  updateFabState();
+}
+
+function startCanal(i) {
+  if(canalActive[i]) return;
+  const nodeData = CANAL_CREATORS[i]();
+  const gain = audioCtx.createGain();
+  gain.gain.value = canalVolumes[i];
+  nodeData.out.connect(gain);
+  gain.connect(masterGain);
+  // Ronroneo (canal 2) ya inicia sus osciladores internamente
+  if(nodeData.src && typeof nodeData.src.start === 'function' && !nodeData.src._isStub) {
+    nodeData.src.start();
+  }
+  canalNodes[i] = nodeData;
+  canalGains[i] = gain;
+  canalActive[i] = true;
+}
+
+function stopCanal(i) {
+  if(!canalActive[i]) return;
+  try {
+    canalNodes[i].src.stop();
+    if(canalNodes[i].extra) canalNodes[i].extra.forEach(n => n.stop());
+  } catch(e) {}
+  canalActive[i] = false;
+  canalNodes[i] = null;
+  canalGains[i] = null;
+}
+
+function setVolCanal(i, val) {
+  canalVolumes[i] = val / 100;
+  if(canalGains[i]) canalGains[i].gain.value = canalVolumes[i];
+  document.getElementById('vol-fill-' + i).style.width = val + '%';
+}
+
+function setMasterVol(val) {
+  masterVolume = val / 100;
+  if(masterGain) masterGain.gain.value = masterVolume;
+  document.getElementById('master-vol-fill').style.width = val + '%';
+  document.getElementById('master-vol-pct').textContent = val + '%';
+}
+
+function updateSonidosUI() {
+  for(let i=0; i<3; i++) {
+    const btn = document.getElementById('canal-btn-' + i);
+    const wave = document.getElementById('wave-' + i);
+    if(canalActive[i]) {
+      btn.classList.add('active');
+      btn.textContent = '⏸';
+      wave.classList.add('playing');
+    } else {
+      btn.classList.remove('active');
+      btn.textContent = '▶';
+      wave.classList.remove('playing');
+    }
+  }
+}
+
+function updateFabState() {
+  const anyPlaying = canalActive.some(Boolean);
+  const fab = document.getElementById('sonidos-fab');
+  fab.textContent = anyPlaying ? '🔊' : '🎵';
+  fab.classList.toggle('playing', anyPlaying);
+}
+
+function showSonidos() {
+  document.getElementById('sonidos-panel').classList.add('open');
+  updateSonidosUI();
+}
+
+function closeSonidos() {
+  document.getElementById('sonidos-panel').classList.remove('open');
+}
+
+// Sleep timer
+function setSleepTimer(minutes) {
+  clearSleepTimer();
+  sleepEndsAt = Date.now() + minutes * 60 * 1000;
+  document.querySelectorAll('.sleep-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sleep-' + minutes).classList.add('active');
+
+  sleepCountdownInterval = setInterval(() => {
+    const remaining = sleepEndsAt - Date.now();
+    if(remaining <= 0) {
+      clearSleepTimer();
+      [0,1,2].forEach(i => stopCanal(i));
+      updateSonidosUI();
+      updateFabState();
+      showToast('😴 Paisajes sonoros apagados');
+      return;
+    }
+    const m = Math.floor(remaining / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    document.getElementById('sleep-countdown').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }, 1000);
+
+  showToast(`⏱ Se apagará en ${minutes} minutos`);
+}
+
+function clearSleepTimer() {
+  if(sleepCountdownInterval) clearInterval(sleepCountdownInterval);
+  sleepTimerId = null;
+  sleepEndsAt = null;
+  document.getElementById('sleep-countdown').textContent = '';
+  document.querySelectorAll('.sleep-btn').forEach(b => b.classList.remove('active'));
+}
+
+// ═══════════════════════════════
+//  INIT
+// ═══════════════════════════════
+document.getElementById('snow-number').textContent = state.snowflakes;
+initThree();
+updateLuzWidget();
+setInterval(updateLuzWidget, 60000);
+</script>
+
+<!-- Firebase SDK (module) -->
+<script type="module">
+import { initializeApp }                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
+                                                  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc }      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyDJA5d8G_QOhbjrKz4qWr2MqNqvrMUMCeg",
+  authDomain:        "honguito-rojo.firebaseapp.com",
+  projectId:         "honguito-rojo",
+  storageBucket:     "honguito-rojo.firebasestorage.app",
+  messagingSenderId: "639616668872",
+  appId:             "1:639616668872:web:7edd110d6b4b4832ad41fd",
+  measurementId:     "G-8BQEDRZ8GD"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+let _userId = null;
+let _saveTimeout = null;
+
+// ── Guardar en Firestore (debounce 2s para no saturar) ──
+async function saveToCloud() {
+  if(!_userId) return;
+  try {
+    const ref = doc(db, 'usuarios', _userId);
+    // Clone state but strip huge base64 photos from cloud to stay under 1MB limit
+    const cloudState = JSON.parse(JSON.stringify(state));
+    if(cloudState.tesoros2) {
+      cloudState.tesoros2 = cloudState.tesoros2.map(t => ({ ...t, photo: t.photo ? '📸' : null }));
+    }
+    await setDoc(ref, { state: cloudState, updated: Date.now() }, { merge: true });
+  } catch(e) {
+    console.warn('Cloud save error:', e.message);
+  }
+}
+
+// Override saveState to also sync cloud
+window._origSaveState = window.saveState || function(){};
+window.saveState = function() {
+  localStorage.setItem('honguito_state', JSON.stringify(state));
+  const el = document.getElementById('snow-number');
+  if(el) el.textContent = state.snowflakes;
+  // Debounce cloud save
+  if(_saveTimeout) clearTimeout(_saveTimeout);
+  _saveTimeout = setTimeout(saveToCloud, 2000);
+};
+
+// ── Cargar desde Firestore ──
+async function loadFromCloud(uid) {
+  try {
+    const ref  = doc(db, 'usuarios', uid);
+    const snap = await getDoc(ref);
+    if(snap.exists()) {
+      const cloudState = snap.data().state;
+      // Merge: cloud wins for everything except local photos
+      const localPhotos = {};
+      if(state.tesoros2) {
+        state.tesoros2.forEach(t => { if(t.photo && t.photo !== '📸') localPhotos[t.id] = t.photo; });
+      }
+      Object.assign(state, cloudState);
+      if(!state.tesoros2) state.tesoros2 = [];
+      if(!state.logros)   state.logros   = [];
+      if(!state.badges)   state.badges   = {};
+      if(!state.answers)  state.answers  = {};
+      // Restore local photos
+      state.tesoros2.forEach(t => { if(localPhotos[t.id]) t.photo = localPhotos[t.id]; });
+      localStorage.setItem('honguito_state', JSON.stringify(state));
+    }
+    // Update UI
+    const el = document.getElementById('snow-number');
+    if(el) el.textContent = state.snowflakes;
+  } catch(e) {
+    console.warn('Cloud load error:', e.message);
+  }
+}
+
+// ── Login con Google ──
+window.loginWithGoogle = async function() {
+  const btn   = document.getElementById('google-login-btn');
+  const errEl = document.getElementById('login-error');
+  const loadEl= document.getElementById('login-loading');
+  btn.style.display  = 'none';
+  errEl.style.display= 'none';
+  loadEl.style.display = 'block';
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    btn.style.display   = 'flex';
+    loadEl.style.display= 'none';
+    errEl.style.display = 'block';
+    errEl.textContent   = 'No se pudo iniciar sesión. Intenta de nuevo.';
+    console.error(e);
+  }
+};
+
+// ── Cerrar sesión (disponible globalmente) ──
+window.cerrarSesion = async function() {
+  await signOut(auth);
+  location.reload();
+};
+
+// ── Observer de autenticación ──
+onAuthStateChanged(auth, async (user) => {
+  const loginScreen = document.getElementById('login-screen');
+  if(user) {
+    _userId = user.uid;
+    // Show loading state
+    const loadEl = document.getElementById('login-loading');
+    if(loadEl) loadEl.style.display = 'block';
+
+    // Load cloud data
+    await loadFromCloud(user.uid);
+
+    // Hide login, show app
+    if(loginScreen) loginScreen.style.display = 'none';
+
+    // Add user badge to header
+    const header = document.getElementById('header');
+    if(header && !document.getElementById('user-badge')) {
+      const badge = document.createElement('div');
+      badge.id = 'user-badge';
+      badge.style.cssText = `
+        position:absolute;left:50%;transform:translateX(-50%);
+        display:flex;align-items:center;gap:6px;
+        background:rgba(255,255,255,0.7);
+        border:1px solid rgba(232,52,42,0.15);
+        border-radius:999px;padding:4px 12px 4px 6px;
+        font-size:12px;font-weight:700;color:rgba(61,26,10,0.6);
+        cursor:pointer;
+      `;
+      const photo = user.photoURL
+        ? `<img src="${user.photoURL}" width="20" height="20" style="border-radius:50%">`
+        : '👤';
+      badge.innerHTML = `${photo} ${user.displayName ? user.displayName.split(' ')[0] : 'Tú'}`;
+      badge.title = 'Toca para cerrar sesión';
+      badge.onclick = () => { if(confirm('¿Cerrar sesión?')) cerrarSesion(); };
+      header.style.position = 'relative';
+      header.appendChild(badge);
+    }
+
+  } else {
+    _userId = null;
+    if(loginScreen) loginScreen.style.display = 'flex';
+  }
+});
+</script>
+</body>
+</html>
